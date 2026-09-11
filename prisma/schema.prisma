@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SISWA
+  GURU
+  ADMIN
+}
+
+enum StatusAkun {
+  AKTIF
+  NONAKTIF
+}
+
+enum StatusKegiatan {
+  BELUM_MULAI
+  BERLANGSUNG
+  SELESAI
+}
+
+enum TipeMateri {
+  PDF
+  VIDEO
+  LINK
+}
+
+enum StatusKehadiran {
+  HADIR
+  TIDAK_HADIR
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  nama      String
+  email     String     @unique
+  password  String
+  role      Role       @default(SISWA)
+  status    StatusAkun @default(AKTIF)
+  createdAt DateTime   @default(now())
+  siswa     Siswa?
+  guru      Guru?
+
+  @@map("users")
+}
+
+model Siswa {
+  id          Int           @id @default(autoincrement())
+  userId      Int           @unique
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kelasId     Int
+  kelas       Kelas         @relation(fields: [kelasId], references: [id])
+  pendaftaran Pendaftaran[]
+
+  @@map("siswa")
+}
+
+model Guru {
+  id        Int          @id @default(autoincrement())
+  userId    Int          @unique
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nip       String       @unique
+  mapelGuru MapelGuru[]
+  kegiatan  Kegiatan[]
+
+  @@map("guru")
+}
+
+model Jurusan {
+  id          Int     @id @default(autoincrement())
+  namaJurusan String  @unique
+  kelas       Kelas[]
+
+  @@map("jurusan")
+}
+
+model Kelas {
+  id        Int      @id @default(autoincrement())
+  namaKelas String
+  jurusanId Int
+  jurusan   Jurusan  @relation(fields: [jurusanId], references: [id], onDelete: Cascade)
+  siswa     Siswa[]
+
+  @@unique([namaKelas, jurusanId])
+  @@map("kelas")
+}
+
+model Mapel {
+  id        Int          @id @default(autoincrement())
+  namaMapel String       @unique
+  kegiatan  Kegiatan[]
+  mapelGuru MapelGuru[]
+
+  @@map("mapel")
+}
+
+model MapelGuru {
+  id      Int   @id @default(autoincrement())
+  mapelId Int
+  guruId  Int
+  mapel   Mapel @relation(fields: [mapelId], references: [id], onDelete: Cascade)
+  guru    Guru  @relation(fields: [guruId], references: [id], onDelete: Cascade)
+
+  @@unique([mapelId, guruId])
+  @@map("mapel_guru")
+}
+
+model Kegiatan {
+  id                Int                @id @default(autoincrement())
+  judulPembelajaran String
+  mapelId           Int
+  guruId            Int
+  tanggal           DateTime           @db.Date
+  waktuMulai        String
+  waktuSelesai      String
+  status            StatusKegiatan     @default(BELUM_MULAI)
+  deskripsi         String?            @db.Text
+  jumlahSiswaDaftar Int                @default(0)
+  mapel             Mapel              @relation(fields: [mapelId], references: [id])
+  guru              Guru               @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  materi            Materi[]
+  pendaftaran       Pendaftaran[]
+
+  @@index([status])
+  @@map("kegiatan")
+}
+
+model Materi {
+  id          Int       @id @default(autoincrement())
+  kegiatanId  Int
+  judulMateri String
+  filePath    String
+  tipe        TipeMateri
+  kegiatan    Kegiatan  @relation(fields: [kegiatanId], references: [id], onDelete: Cascade)
+
+  @@map("materi")
+}
+
+model Pendaftaran {
+  id              Int              @id @default(autoincrement())
+  siswaId         Int
+  kegiatanId      Int
+  tanggalDaftar   DateTime         @default(now())
+  statusKehadiran StatusKehadiran?
+  siswa           Siswa            @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  kegiatan        Kegiatan         @relation(fields: [kegiatanId], references: [id], onDelete: Cascade)
+
+  @@unique([siswaId, kegiatanId])
+  @@map("pendaftaran")
+}
