@@ -2,26 +2,29 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { Icon } from "@/components/Icon";
 import { KegiatanCard, type KegiatanCardData } from "@/components/KegiatanCard";
+import { toKegiatanCardData } from "@/lib/mappers";
+import { inferKegiatanCoverUrl } from "@/lib/thumbnail";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Kegiatan Pembelajaran" };
 
+export const dynamic = "force-dynamic";
+
 export default async function KegiatanPublicPage() {
+  await syncKegiatanStatuses();
+
   const kegiatan = await db.kegiatan.findMany({
     orderBy: [{ status: "asc" }, { tanggal: "desc" }],
-    include: { mapel: true, guru: { include: { user: true } }, _count: { select: { materi: true } } },
+    include: {
+      mapel: true,
+      guru: { include: { user: true } },
+      materi: { select: { tipe: true, filePath: true } },
+    },
   });
 
   const cards: KegiatanCardData[] = kegiatan.map((k) => ({
-    id: k.id,
-    judulPembelajaran: k.judulPembelajaran,
-    mapel: k.mapel.namaMapel,
-    guru: k.guru.user.nama,
-    tanggal: k.tanggal,
-    waktuMulai: k.waktuMulai,
-    waktuSelesai: k.waktuSelesai,
-    status: k.status,
-    jumlahSiswaDaftar: k.jumlahSiswaDaftar,
-    deskripsi: k.deskripsi,
+    ...toKegiatanCardData(k),
+    coverUrl: k.coverUrl ?? inferKegiatanCoverUrl(k.materi),
   }));
 
   return (

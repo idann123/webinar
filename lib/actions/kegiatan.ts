@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -8,6 +8,7 @@ import path from "path";
 import { db } from "@/lib/db";
 import { requireRole, requireSession } from "@/lib/session";
 import { kegiatanSchema, materiLinkSchema } from "@/lib/validators";
+import { advanceStatus, deriveStatus, syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export type KegiatanState = { error?: string; success?: string };
 
@@ -54,10 +55,13 @@ export async function createKegiatan(
       waktuSelesai: parsed.data.waktuSelesai,
       status: "BELUM_MULAI",
       deskripsi: parsed.data.deskripsi.trim(),
+      coverUrl: parsed.data.coverUrl?.trim() ? parsed.data.coverUrl.trim() : null,
     },
   });
 
   revalidatePath("/dashboard/guru");
+  revalidatePath("/kegiatan");
+  revalidatePath("/");
   redirect("/dashboard/guru/kegiatan");
 }
 
@@ -101,10 +105,13 @@ export async function updateKegiatan(
       waktuMulai: parsed.data.waktuMulai,
       waktuSelesai: parsed.data.waktuSelesai,
       deskripsi: parsed.data.deskripsi.trim(),
+      coverUrl: parsed.data.coverUrl?.trim() ? parsed.data.coverUrl.trim() : null,
     },
   });
 
   revalidatePath("/dashboard/guru");
+  revalidatePath("/kegiatan");
+  revalidatePath("/");
   redirect("/dashboard/guru/kegiatan");
 }
 
@@ -121,6 +128,8 @@ export async function deleteKegiatan(formData: FormData) {
   await db.kegiatan.delete({ where: { id: kegiatanId } });
   revalidatePath("/dashboard/guru");
   revalidatePath("/dashboard/admin");
+  revalidatePath("/kegiatan");
+  revalidatePath("/");
 }
 
 export async function updateStatus(formData: FormData) {
@@ -138,24 +147,10 @@ export async function updateStatus(formData: FormData) {
     where: { id: kegiatanId },
     data: { status: status as "BELUM_MULAI" | "BERLANGSUNG" | "SELESAI" },
   });
+  await syncKegiatanStatuses();
   revalidatePath("/dashboard/guru");
   revalidatePath("/kegiatan");
-}
-
-async function syncKegiatanStatus(kegiatanId: number, tanggal: Date, waktuMulai: string) {
-  const [hh, mm] = waktuMulai.split(":").map(Number);
-  const mulai = new Date(tanggal);
-  mulai.setHours(hh, mm, 0, 0);
-
-  const now = new Date();
-  let nextStatus: "BELUM_MULAI" | "BERLANGSUNG" | "SELESAI" | null = null;
-  if (now > mulai) nextStatus = "BERLANGSUNG";
-  if (nextStatus) {
-    await db.kegiatan.updateMany({
-      where: { id: kegiatanId, status: { in: ["BELUM_MULAI"] } },
-      data: { status: nextStatus },
-    });
-  }
+  revalidatePath("/");
 }
 
 export async function daftarKegiatan(formData: FormData) {
@@ -171,12 +166,12 @@ export async function daftarKegiatan(formData: FormData) {
   await db.$transaction(async (tx) => {
     const kegiatan = await tx.kegiatan.findUnique({ where: { id: kegiatanId } });
     if (!kegiatan) return;
-    await syncKegiatanStatus(kegiatanId, kegiatan.tanggal, kegiatan.waktuMulai);
+    if (advanceStatus(kegiatan.status, deriveStatus(kegiatan)) === "SELESAI") return;
 
     const sudah = await tx.pendaftaran.findUnique({
       where: { siswaId_kegiatanId: { siswaId: siswa.id, kegiatanId } },
     });
-    if (sudah || kegiatan.status === "SELESAI") return;
+    if (sudah) return;
 
     await tx.pendaftaran.create({
       data: { siswaId: siswa.id, kegiatanId },
@@ -187,8 +182,10 @@ export async function daftarKegiatan(formData: FormData) {
     });
   });
 
+  await syncKegiatanStatuses();
   revalidatePath("/dashboard/siswa");
   revalidatePath("/kegiatan");
+  revalidatePath("/");
 }
 
 export async function uploadMateri(

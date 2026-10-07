@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/session";
 import { toKegiatanCardData } from "@/lib/mappers";
+import { inferKegiatanCoverUrl } from "@/lib/thumbnail";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 import { SiswaKegiatanList } from "@/components/siswa/SiswaKegiatanList";
 
 export const metadata = { title: "Kegiatan Siswa" };
@@ -9,17 +11,23 @@ export default async function SiswaKegiatanPage() {
   const session = await requireRole("SISWA");
   const siswa = await db.siswa.findFirstOrThrow({ where: { userId: session.userId } });
 
+  await syncKegiatanStatuses();
+
   const kegiatan = await db.kegiatan.findMany({
     orderBy: [{ status: "asc" }, { tanggal: "desc" }],
     include: {
       mapel: true,
       guru: { include: { user: true } },
       pendaftaran: { where: { siswaId: siswa.id } },
+      materi: { select: { tipe: true, filePath: true } },
     },
   });
 
   const items = kegiatan.map((k) => ({
-    kegiatan: toKegiatanCardData(k),
+    kegiatan: {
+      ...toKegiatanCardData(k),
+      coverUrl: k.coverUrl ?? inferKegiatanCoverUrl(k.materi),
+    },
     registered: k.pendaftaran.length > 0,
   }));
 

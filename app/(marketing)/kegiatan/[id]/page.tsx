@@ -6,6 +6,7 @@ import { daftarKegiatan } from "@/lib/actions/kegiatan";
 import { Icon } from "@/components/Icon";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { formatTanggal, tipeMateriLabel } from "@/lib/utils";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export default async function KegiatanDetailPage({
   params,
@@ -15,6 +16,8 @@ export default async function KegiatanDetailPage({
   const { id } = await params;
   const kegiatanId = Number(id);
   if (!kegiatanId) notFound();
+
+  await syncKegiatanStatuses();
 
   const kegiatan = await db.kegiatan.findUnique({
     where: { id: kegiatanId },

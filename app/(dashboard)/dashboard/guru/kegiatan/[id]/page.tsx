@@ -10,6 +10,7 @@ import { ConfirmForm } from "@/components/ConfirmForm";
 import { Icon } from "@/components/Icon";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { formatTanggal, tipeMateriLabel } from "@/lib/utils";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Kelola Kegiatan" };
 
@@ -33,6 +34,8 @@ export default async function GuruKegiatanDetailPage({
     where: { userId: session.userId },
     include: { mapelGuru: true },
   });
+
+  await syncKegiatanStatuses();
 
   const mapel = await db.mapel.findMany({
     where: { id: { in: guru.mapelGuru.map((m) => m.mapelId) } },
@@ -80,6 +83,7 @@ export default async function GuruKegiatanDetailPage({
               waktuMulai: kegiatan.waktuMulai,
               waktuSelesai: kegiatan.waktuSelesai,
               deskripsi: kegiatan.deskripsi ?? "",
+              coverUrl: kegiatan.coverUrl ?? "",
             }}
           />
         </div>

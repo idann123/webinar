@@ -6,6 +6,7 @@ import { daftarKegiatan } from "@/lib/actions/kegiatan";
 import { Icon } from "@/components/Icon";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { formatTanggal, tipeMateriLabel } from "@/lib/utils";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Detail Kegiatan" };
 
@@ -20,6 +21,8 @@ export default async function SiswaKegiatanDetailPage({
 
   const session = await requireRole("SISWA");
   const siswa = await db.siswa.findFirstOrThrow({ where: { userId: session.userId } });
+
+  await syncKegiatanStatuses();
 
   const kegiatan = await db.kegiatan.findUnique({
     where: { id: kegiatanId },

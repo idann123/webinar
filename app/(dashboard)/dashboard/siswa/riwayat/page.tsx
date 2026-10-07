@@ -6,12 +6,15 @@ import { KegiatanCard } from "@/components/KegiatanCard";
 import { Icon } from "@/components/Icon";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { formatTanggal } from "@/lib/utils";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Riwayat Belajar" };
 
 export default async function SiswaRiwayatPage() {
   const session = await requireRole("SISWA");
   const siswa = await db.siswa.findFirstOrThrow({ where: { userId: session.userId } });
+
+  await syncKegiatanStatuses();
 
   const riwayat = await db.pendaftaran.findMany({
     where: { siswaId: siswa.id },

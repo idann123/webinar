@@ -3,8 +3,12 @@ import type { CSSProperties } from "react";
 import { db } from "@/lib/db";
 import { Icon } from "@/components/Icon";
 import { KegiatanCard, type KegiatanCardData } from "@/components/KegiatanCard";
+import { toKegiatanCardData } from "@/lib/mappers";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Beranda" };
+
+export const dynamic = "force-dynamic";
 
 const FEATURES = [
   {
@@ -93,6 +97,7 @@ export default async function HomePage() {
   let dbError = false;
 
   try {
+    await syncKegiatanStatuses();
     const result = await Promise.all([
       db.kegiatan.count(),
       db.user.count({ where: { role: "SISWA" } }),
@@ -105,18 +110,7 @@ export default async function HomePage() {
     console.error("Gagal memuat data beranda:", err);
   }
 
-  const recentCards: KegiatanCardData[] = recent.map((k) => ({
-    id: k.id,
-    judulPembelajaran: k.judulPembelajaran,
-    mapel: k.mapel.namaMapel,
-    guru: k.guru.user.nama,
-    tanggal: k.tanggal,
-    waktuMulai: k.waktuMulai,
-    waktuSelesai: k.waktuSelesai,
-    status: k.status,
-    jumlahSiswaDaftar: k.jumlahSiswaDaftar,
-    deskripsi: k.deskripsi,
-  }));
+  const recentCards: KegiatanCardData[] = recent.map(toKegiatanCardData);
 
   const spotlight = recentCards[0];
 

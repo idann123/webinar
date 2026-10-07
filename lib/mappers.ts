@@ -9,6 +9,7 @@ type KegiatanRow = {
   status: string;
   jumlahSiswaDaftar: number;
   deskripsi: string | null;
+  coverUrl: string | null;
   mapel: { namaMapel: string };
   guru: { user: { nama: string } };
 };
@@ -25,5 +26,6 @@ export function toKegiatanCardData(k: KegiatanRow): KegiatanCardData {
     status: k.status,
     jumlahSiswaDaftar: k.jumlahSiswaDaftar,
     deskripsi: k.deskripsi,
+    coverUrl: k.coverUrl,
   };
 }

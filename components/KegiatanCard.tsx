@@ -1,9 +1,10 @@
-import Link from "next/link";
-import { StatusBadge } from "@/components/dashboard/StatusBadge";
+﻿import Link from "next/link";
+import { KegiatanHero } from "@/components/KegiatanHero";
 import { Icon } from "@/components/Icon";
 import { formatTanggalShort } from "@/lib/utils";
 
 export type KegiatanCardData = {
+  coverUrl?: string | null;
   id: number;
   judulPembelajaran: string;
   mapel: string;
@@ -27,20 +28,25 @@ export function KegiatanCard({
 }) {
   return (
     <div className="card flex flex-col overflow-hidden transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
-        <StatusBadge status={kegiatan.status} />
-        <p className="text-xs font-medium text-slate-500">
-          <Icon name="group" className="mr-1 text-base text-brand-600" />
-          {kegiatan.jumlahSiswaDaftar} daftar
-        </p>
-      </div>
+      <KegiatanHero
+        coverUrl={kegiatan.coverUrl}
+        status={kegiatan.status}
+        jumlahDaftar={kegiatan.jumlahSiswaDaftar}
+        className="aspect-video"
+      />
 
       <div className="flex flex-1 flex-col p-5">
-        <span className="text-xs font-bold uppercase tracking-wider text-brand-700">
-          {kegiatan.mapel}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="badge border-brand-200 bg-brand-50 text-brand-700">
+            {kegiatan.mapel}
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            {formatTanggalShort(kegiatan.tanggal)}
+          </span>
+        </div>
+
         <Link href={href}>
-          <h3 className="mt-1.5 line-clamp-2 font-display text-lg font-bold text-slate-900 transition-colors hover:text-brand-700">
+          <h3 className="mt-2 line-clamp-2 font-display text-lg font-bold text-slate-900 transition-colors hover:text-brand-700">
             {kegiatan.judulPembelajaran}
           </h3>
         </Link>
@@ -51,10 +57,6 @@ export function KegiatanCard({
 
         <div className="mt-4 space-y-2 text-sm text-slate-600">
           <p className="flex items-center gap-2">
-            <Icon name="calendar_today" className="text-lg text-slate-400" />
-            {formatTanggalShort(kegiatan.tanggal)}
-          </p>
-          <p className="flex items-center gap-2">
             <Icon name="schedule" className="text-lg text-slate-400" />
             {kegiatan.waktuMulai} - {kegiatan.waktuSelesai} WIB
           </p>
@@ -64,7 +66,9 @@ export function KegiatanCard({
           </p>
         </div>
 
-        {children && <div className="mt-5 pt-4 border-t border-slate-100">{children}</div>}
+        {children && (
+          <div className="mt-5 border-t border-slate-100 pt-4 [&>*]:w-full">{children}</div>
+        )}
       </div>
     </div>
   );

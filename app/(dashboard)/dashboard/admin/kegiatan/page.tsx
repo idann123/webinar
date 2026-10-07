@@ -4,11 +4,13 @@ import { requireRole } from "@/lib/session";
 import { Icon } from "@/components/Icon";
 import { formatTanggalShort } from "@/lib/utils";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Pantau Kegiatan" };
 
 export default async function AdminKegiatanPage() {
   await requireRole("ADMIN");
+  await syncKegiatanStatuses();
   const kegiatan = await db.kegiatan.findMany({
     orderBy: { tanggal: "desc" },
     include: {

@@ -2,11 +2,14 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/session";
 import { Icon } from "@/components/Icon";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Ringkasan Admin" };
 
 export default async function AdminDashboardPage() {
   const session = await requireRole("ADMIN");
+
+  await syncKegiatanStatuses();
 
   const [
     totalGuru,

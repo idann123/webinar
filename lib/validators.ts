@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 
 export const loginSchema = z.object({
   email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
@@ -19,6 +19,7 @@ export const kegiatanSchema = z.object({
   waktuMulai: z.string().min(1, "Jam mulai wajib diisi"),
   waktuSelesai: z.string().min(1, "Jam selesai wajib diisi"),
   deskripsi: z.string().optional().default(""),
+  coverUrl: z.string().trim().url("Format URL gambar tidak valid").optional().or(z.literal("")),
 });
 
 export const materiLinkSchema = z.object({
@@ -46,3 +47,4 @@ export const guruSchema = z.object({
   nip: z.string().min(4, "NIP wajib diisi"),
   mapelIds: z.array(z.coerce.number().int().positive()).min(1, "Pilih minimal satu mapel"),
 });
+

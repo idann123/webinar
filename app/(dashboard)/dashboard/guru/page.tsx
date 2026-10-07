@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/session";
 import { Icon } from "@/components/Icon";
 import { formatTanggalShort } from "@/lib/utils";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Ringkasan Guru" };
 
@@ -14,6 +15,8 @@ export default async function GuruDashboardPage() {
     include: { mapelGuru: { include: { mapel: true } } },
   });
   if (!guru) throw new Error("Data guru tidak ditemukan");
+
+  await syncKegiatanStatuses();
 
   const [totalKegiatan, belumMulai, berlangsung, selesai, jumlahPendaftar] = await Promise.all([
     db.kegiatan.count({ where: { guruId: guru.id } }),

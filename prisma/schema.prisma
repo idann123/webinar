@@ -121,6 +121,7 @@ model Kegiatan {
   status            StatusKegiatan     @default(BELUM_MULAI)
   deskripsi         String?            @db.Text
   jumlahSiswaDaftar Int                @default(0)
+  coverUrl          String?            @db.Text
   mapel             Mapel              @relation(fields: [mapelId], references: [id])
   guru              Guru               @relation(fields: [guruId], references: [id], onDelete: Cascade)
   materi            Materi[]

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useActionState } from "react";
@@ -20,6 +20,7 @@ export type KegiatanFormValues = {
   waktuMulai: string;
   waktuSelesai: string;
   deskripsi: string;
+  coverUrl?: string;
 };
 
 export function KegiatanForm({
@@ -129,6 +130,23 @@ export function KegiatanForm({
           placeholder="Jelaskan ringkasan materi yang akan dibahas..."
           className="input resize-none"
         />
+      </div>
+
+      <div>
+        <label htmlFor="coverUrl" className="label">
+          URL Gambar Hero <span className="text-xs font-normal text-slate-400">(Opsional)</span>
+        </label>
+        <input
+          id="coverUrl"
+          name="coverUrl"
+          type="url"
+          defaultValue={initial?.coverUrl ?? ""}
+          placeholder="Contoh: https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg"
+          className="input"
+        />
+        <p className="mt-1.5 text-xs text-slate-500">
+          Tempel thumbnail YouTube atau link gambar cover. Kosongkan untuk pakai tampilan default.
+        </p>
       </div>
 
       <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">

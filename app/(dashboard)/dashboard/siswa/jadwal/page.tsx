@@ -4,12 +4,15 @@ import { requireRole } from "@/lib/session";
 import { Icon } from "@/components/Icon";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { formatTanggal } from "@/lib/utils";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Jadwal Pembelajaran" };
 
 export default async function SiswaJadwalPage() {
   const session = await requireRole("SISWA");
   const siswa = await db.siswa.findFirstOrThrow({ where: { userId: session.userId } });
+
+  await syncKegiatanStatuses();
 
   const [pendaftaran, semuaMendatang] = await Promise.all([
     db.pendaftaran.findMany({

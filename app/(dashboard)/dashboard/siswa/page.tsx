@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireRole } from "@/lib/session";
 import { Icon } from "@/components/Icon";
 import { formatTanggal } from "@/lib/utils";
+import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Ringkasan Siswa" };
 
@@ -12,6 +13,8 @@ export default async function SiswaDashboardPage() {
     where: { userId: session.userId },
     include: { kelas: { include: { jurusan: true } } },
   });
+
+  await syncKegiatanStatuses();
 
   const [totalKegiatan, belumMulai, berlangsung, selesai, diikuti] = await Promise.all([
     db.kegiatan.count(),
