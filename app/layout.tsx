@@ -29,7 +29,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`${inter.variable} ${jakarta.variable}`}>
+    <html
+      lang="id"
+      data-scroll-behavior="smooth"
+      className={`${inter.variable} ${jakarta.variable}`}
+    >
       <head>
         <link
           rel="stylesheet"

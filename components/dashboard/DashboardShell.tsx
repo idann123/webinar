@@ -14,6 +14,9 @@ const LINKS: Record<User["role"], { href: string; label: string; icon: string }[
     { href: "/dashboard/siswa", label: "Ringkasan", icon: "dashboard" },
     { href: "/dashboard/siswa/kegiatan", label: "Kegiatan", icon: "event_available" },
     { href: "/dashboard/siswa/riwayat", label: "Riwayat", icon: "history" },
+    { href: "/dashboard/siswa/jadwal", label: "Jadwal", icon: "calendar_month" },
+    { href: "/dashboard/siswa/materi", label: "Materi", icon: "menu_book" },
+    { href: "/dashboard/siswa/profil", label: "Profil", icon: "person" },
   ],
   GURU: [
     { href: "/dashboard/guru", label: "Ringkasan", icon: "dashboard" },
@@ -45,14 +48,20 @@ export function DashboardShell({ user, children }: { user: User; children: React
           alt="Logo SMK Kosgoro"
           className="h-9 w-9 rounded-lg object-cover ring-1 ring-slate-200"
         />
-        <span className="font-display text-base font-extrabold text-slate-900">
-          SMK Kosgoro
-        </span>
+        <div className="leading-tight">
+          <span className="block font-display text-base font-extrabold text-slate-900">
+            SMK Kosgoro
+          </span>
+          <span className="block text-[10px] font-semibold uppercase tracking-wider text-brand-700">
+            Pembelajaran Digital
+          </span>
+        </div>
       </Link>
 
       <nav className="flex-1 space-y-1">
         {links.map((link) => {
-          const active = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href + "/"));
+          const isRoot = link.href === "/dashboard/siswa" || link.href === "/dashboard/guru" || link.href === "/dashboard/admin";
+          const active = pathname === link.href || (!isRoot && pathname.startsWith(link.href + "/"));
           return (
             <Link
               key={link.href}
