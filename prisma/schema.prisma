@@ -65,6 +65,8 @@ model Guru {
   userId    Int          @unique
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   nip       String       @unique
+  jabatan   String?
+  foto      String?      @db.Text
   mapelGuru MapelGuru[]
   kegiatan  Kegiatan[]
 

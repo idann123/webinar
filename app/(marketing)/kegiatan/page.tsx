@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { Icon } from "@/components/Icon";
 import { KegiatanCard, type KegiatanCardData } from "@/components/KegiatanCard";
 import { toKegiatanCardData } from "@/lib/mappers";
-import { inferKegiatanCoverUrl } from "@/lib/thumbnail";
+import { resolveKegiatanCover } from "@/lib/thumbnail";
 import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Kegiatan Pembelajaran" };
@@ -24,7 +24,7 @@ export default async function KegiatanPublicPage() {
 
   const cards: KegiatanCardData[] = kegiatan.map((k) => ({
     ...toKegiatanCardData(k),
-    coverUrl: k.coverUrl ?? inferKegiatanCoverUrl(k.materi),
+    coverUrl: resolveKegiatanCover(k.coverUrl, k.materi),
   }));
 
   return (

@@ -145,7 +145,7 @@ export function KegiatanForm({
           className="input"
         />
         <p className="mt-1.5 text-xs text-slate-500">
-          Tempel thumbnail YouTube atau link gambar cover. Kosongkan untuk pakai tampilan default.
+          Tempel link YouTube (otomatis pakai thumbnail video) atau URL gambar cover. Kosongkan untuk pakai tampilan default.
         </p>
       </div>
 

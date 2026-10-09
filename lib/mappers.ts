@@ -1,4 +1,5 @@
 import type { KegiatanCardData } from "@/components/KegiatanCard";
+import { resolveCoverImageUrl } from "@/lib/thumbnail";
 
 type KegiatanRow = {
   id: number;
@@ -26,6 +27,6 @@ export function toKegiatanCardData(k: KegiatanRow): KegiatanCardData {
     status: k.status,
     jumlahSiswaDaftar: k.jumlahSiswaDaftar,
     deskripsi: k.deskripsi,
-    coverUrl: k.coverUrl,
+    coverUrl: resolveCoverImageUrl(k.coverUrl),
   };
 }

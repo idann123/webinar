@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { requireRole } from "@/lib/session";
 import { Icon } from "@/components/Icon";
 import { KegiatanCardGuru } from "@/components/guru/KegiatanCardGuru";
-import { inferKegiatanCoverUrl } from "@/lib/thumbnail";
+import { resolveKegiatanCover } from "@/lib/thumbnail";
 import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Kegiatan Saya" };
@@ -61,7 +61,7 @@ export default async function GuruKegiatanPage() {
               status={k.status}
               jumlahPeserta={k._count.pendaftaran}
               jumlahMateri={k._count.materi}
-              coverUrl={k.coverUrl ?? inferKegiatanCoverUrl(k.materi)}
+              coverUrl={resolveKegiatanCover(k.coverUrl, k.materi)}
             />
           ))}
         </div>

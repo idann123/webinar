@@ -22,7 +22,7 @@ export function KegiatanHero({
       style={
         hasCover
           ? {
-              backgroundImage: `url(${coverUrl})`,
+              backgroundImage: `url("${coverUrl}")`,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }

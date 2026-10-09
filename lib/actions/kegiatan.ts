@@ -32,6 +32,7 @@ export async function createKegiatan(
     waktuMulai: formData.get("waktuMulai"),
     waktuSelesai: formData.get("waktuSelesai"),
     deskripsi: formData.get("deskripsi"),
+    coverUrl: formData.get("coverUrl"),
   });
 
   if (!parsed.success) {
@@ -83,6 +84,7 @@ export async function updateKegiatan(
     waktuMulai: formData.get("waktuMulai"),
     waktuSelesai: formData.get("waktuSelesai"),
     deskripsi: formData.get("deskripsi"),
+    coverUrl: formData.get("coverUrl"),
   });
 
   if (!parsed.success) {

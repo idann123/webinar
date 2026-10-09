@@ -3,13 +3,6 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-function daysFromNow(days: number) {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  d.setHours(9, 0, 0, 0);
-  return d;
-}
-
 async function main() {
   console.log("Mengosongkan data lama...");
   await prisma.pendaftaran.deleteMany();
@@ -59,6 +52,8 @@ async function main() {
       guru: {
         create: {
           nip: "1995010120221001",
+          jabatan: "Waka. Bid. Kurikulum",
+          foto: "https://smks-kosgoro.sch.id/public/uploads/1791117907_Pa_Kharis.jpg",
           mapelGuru: {
             create: [
               { mapelId: mapelPemweb.id },
@@ -83,6 +78,8 @@ async function main() {
       guru: {
         create: {
           nip: "1998021520221002",
+          jabatan: "Guru Mapel",
+          foto: "https://smks-kosgoro.sch.id/public/uploads/1791123180_bu_holilah.jpg",
           mapelGuru: {
             create: [{ mapelId: mapelJarkom.id }, { mapelId: mapelMatematika.id }],
           },
@@ -92,92 +89,13 @@ async function main() {
   });
 
   console.log("Membuat siswa contoh...");
-  const siswaBian = await prisma.user.create({
+  await prisma.user.create({
     data: {
       nama: "Muhammad Bian",
       email: "siswa@kosgoro.sch.id",
       password: await bcrypt.hash("siswa123", 10),
       role: "SISWA",
       siswa: { create: { kelasId: kelasRPL1.id } },
-    },
-    include: { siswa: true },
-  });
-
-  const guruBudi = await prisma.guru.findFirstOrThrow({ where: { user: { email: "budi@kosgoro.sch.id" } } });
-  const guruSarah = await prisma.guru.findFirstOrThrow({ where: { user: { email: "sarah@kosgoro.sch.id" } } });
-
-  console.log("Membuat kegiatan pembelajaran...");
-  const akt1 = await prisma.kegiatan.create({
-    data: {
-      judulPembelajaran: "Dasar Pemrograman Web: HTML & CSS",
-      mapelId: mapelPemweb.id,
-      guruId: guruBudi.id,
-      tanggal: daysFromNow(7),
-      waktuMulai: "09:00",
-      waktuSelesai: "11:30",
-      status: "BELUM_MULAI",
-      deskripsi:
-        "Belajar struktur dasar halaman web dengan HTML dan styling menggunakan CSS. Dilanjutkan dengan latihan membuat landing page sederhana.",
-    },
-  });
-
-  await prisma.kegiatan.create({
-    data: {
-      judulPembelajaran: "Latihan Soal & Strategi Ujian Matematika",
-      mapelId: mapelMatematika.id,
-      guruId: guruSarah.id,
-      tanggal: daysFromNow(-3),
-      waktuMulai: "08:30",
-      waktuSelesai: "10:00",
-      status: "BERLANGSUNG",
-      deskripsi:
-        "Pembahasan soal-soal ujian semester dan tips mengerjakan soal cerita dengan cepat dan tepat.",
-    },
-  });
-
-  const akt3 = await prisma.kegiatan.create({
-    data: {
-      judulPembelajaran: "Jaringan Komputer & Pengenalan IP Addressing",
-      mapelId: mapelJarkom.id,
-      guruId: guruSarah.id,
-      tanggal: daysFromNow(0),
-      waktuMulai: "14:00",
-      waktuSelesai: "16:00",
-      status: "BELUM_MULAI",
-      deskripsi:
-        "Memahami konsep dasar jaringan, model OSI, kelas IP, subnetting sederhana, dan praktik konfigurasi.",
-    },
-  });
-
-  console.log("Membuat materi & pendaftaran contoh...");
-  await prisma.materi.createMany({
-    data: [
-      {
-        kegiatanId: akt1.id,
-        judulMateri: "Slide Presentasi HTML & CSS",
-        filePath: "https://www.w3schools.com/html/html_intro.asp",
-        tipe: "LINK",
-      },
-      {
-        kegiatanId: akt1.id,
-        judulMateri: "Video Tutorial Dasar HTML",
-        filePath: "https://www.youtube.com/watch?v=pQN-pnXPaVg",
-        tipe: "VIDEO",
-      },
-      {
-        kegiatanId: akt3.id,
-        judulMateri: "Materi Jaringan Komputer",
-        filePath: "https://www.netacad.com/courses/networking",
-        tipe: "LINK",
-      },
-    ],
-  });
-
-  await prisma.pendaftaran.create({
-    data: {
-      siswaId: siswaBian.siswa!.id,
-      kegiatanId: akt3.id,
-      statusKehadiran: "HADIR",
     },
   });
 

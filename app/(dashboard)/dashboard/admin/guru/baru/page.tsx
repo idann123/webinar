@@ -26,7 +26,10 @@ export default async function AdminGuruBaruPage() {
         </p>
       </div>
 
-      <GuruForm mapel={mapel.map((m) => ({ id: m.id, namaMapel: m.namaMapel }))} />
+      <GuruForm
+        mapel={mapel.map((m) => ({ id: m.id, namaMapel: m.namaMapel }))}
+        backHref="/dashboard/admin/guru"
+      />
     </div>
   );
 }

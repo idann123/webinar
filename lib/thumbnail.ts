@@ -37,3 +37,15 @@ export function inferKegiatanCoverUrl(
   }
   return null;
 }
+
+export function resolveCoverImageUrl(url?: string | null): string | null {
+  if (!url) return null;
+  return getYoutubeThumbnail(url) ?? url;
+}
+
+export function resolveKegiatanCover(
+  coverUrl: string | null | undefined,
+  materi: Array<{ tipe: 'PDF' | 'VIDEO' | 'LINK'; filePath: string }>
+): string | null {
+  return resolveCoverImageUrl(coverUrl) ?? inferKegiatanCoverUrl(materi);
+}

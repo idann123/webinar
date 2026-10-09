@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { Icon } from "@/components/Icon";
 import { KegiatanCard, type KegiatanCardData } from "@/components/KegiatanCard";
 import { toKegiatanCardData } from "@/lib/mappers";
+import { resolveKegiatanCover } from "@/lib/thumbnail";
 import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Beranda" };
@@ -77,8 +78,32 @@ function getRecent() {
   return db.kegiatan.findMany({
     orderBy: [{ status: "asc" }, { tanggal: "desc" }],
     take: 3,
-    include: { mapel: true, guru: { include: { user: true } } },
+    include: {
+      mapel: true,
+      guru: { include: { user: true } },
+      materi: { select: { tipe: true, filePath: true } },
+    },
   });
+}
+
+function getGuru() {
+  return db.guru.findMany({
+    orderBy: { user: { nama: "asc" } },
+    include: {
+      user: { select: { nama: true } },
+      mapelGuru: { include: { mapel: true } },
+    },
+  });
+}
+
+function inisial(nama: string) {
+  return nama
+    .replace(/,.*$/, "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 function formatTanggal(value: Date | string) {
@@ -94,6 +119,7 @@ export default async function HomePage() {
   let siswaCount = 0;
   let mapelCount = 0;
   let recent: Awaited<ReturnType<typeof getRecent>> = [];
+  let guruList: Awaited<ReturnType<typeof getGuru>> = [];
   let dbError = false;
 
   try {
@@ -103,14 +129,18 @@ export default async function HomePage() {
       db.user.count({ where: { role: "SISWA" } }),
       db.mapel.count(),
       getRecent(),
+      getGuru(),
     ]);
-    [kegiatanCount, siswaCount, mapelCount, recent] = result;
+    [kegiatanCount, siswaCount, mapelCount, recent, guruList] = result;
   } catch (err) {
     dbError = true;
     console.error("Gagal memuat data beranda:", err);
   }
 
-  const recentCards: KegiatanCardData[] = recent.map(toKegiatanCardData);
+  const recentCards: KegiatanCardData[] = recent.map((k) => ({
+    ...toKegiatanCardData(k),
+    coverUrl: resolveKegiatanCover(k.coverUrl, k.materi),
+  }));
 
   const spotlight = recentCards[0];
 
@@ -300,6 +330,76 @@ export default async function HomePage() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* TENAGA PENDIDIK */}
+      <section className="border-t border-slate-100 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+          <div className="reveal mx-auto max-w-2xl text-center">
+            <span className="badge border-brand-200 bg-brand-50 text-brand-700">
+              <Icon name="school" className="text-sm" filled />
+              Tenaga Pendidik
+            </span>
+            <h2 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              Guru SMK Kosgoro Kota Bogor
+            </h2>
+            <p className="mt-3 text-slate-600">
+              Didukung tenaga pendidik berpengalaman di setiap mata pelajaran.
+            </p>
+          </div>
+
+          {guruList.length > 0 ? (
+            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {guruList.map((g) => (
+                <div
+                  key={g.id}
+                  className="reveal group card overflow-hidden text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="aspect-[4/5] w-full overflow-hidden bg-slate-100">
+                    {g.foto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={g.foto}
+                        alt={g.user.nama}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-500 to-brand-700 font-display text-5xl font-extrabold text-white">
+                        {inisial(g.user.nama)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    {g.jabatan && (
+                      <span className="badge border-brand-200 bg-brand-50 text-brand-700">
+                        {g.jabatan}
+                      </span>
+                    )}
+                    <h3 className="mt-3 font-display text-base font-bold text-slate-900">
+                      {g.user.nama}
+                    </h3>
+                    {g.mapelGuru.length > 0 && (
+                      <p className="mt-1.5 text-xs text-slate-500">
+                        {g.mapelGuru.map((m) => m.mapel.namaMapel).join(", ")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-12 rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                <Icon name={dbError ? "cloud_off" : "group_off"} className="text-3xl" />
+              </div>
+              <p className="mx-auto mt-4 max-w-sm text-sm text-slate-500">
+                {dbError
+                  ? "Data tenaga pendidik belum bisa dimuat. Muat ulang halaman beberapa saat lagi."
+                  : "Belum ada data tenaga pendidik."}
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

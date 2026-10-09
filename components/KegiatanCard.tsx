@@ -27,7 +27,7 @@ export function KegiatanCard({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="card flex flex-col overflow-hidden transition-shadow hover:shadow-md">
+    <div className="card flex h-full flex-col overflow-hidden transition-shadow hover:shadow-md">
       <KegiatanHero
         coverUrl={kegiatan.coverUrl}
         status={kegiatan.status}
@@ -67,7 +67,7 @@ export function KegiatanCard({
         </div>
 
         {children && (
-          <div className="mt-5 border-t border-slate-100 pt-4 [&>*]:w-full">{children}</div>
+          <div className="mt-auto border-t border-slate-100 pt-4 [&>*]:w-full">{children}</div>
         )}
       </div>
     </div>

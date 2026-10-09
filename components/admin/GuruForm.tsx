@@ -1,41 +1,164 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
-import { createGuruByAdmin, type MasterState } from "@/lib/actions/admin";
+import {
+  createGuruByAdmin,
+  updateGuruByAdmin,
+  type MasterState,
+} from "@/lib/actions/admin";
 import { Icon } from "@/components/Icon";
 
 const initialState: MasterState = {};
 
-export function GuruForm({ mapel }: { mapel: { id: number; namaMapel: string }[] }) {
-  const [state, formAction, pending] = useActionState(createGuruByAdmin, initialState);
+export type GuruFormValues = {
+  nama: string;
+  nip: string;
+  email: string;
+  jabatan: string;
+  foto: string;
+  mapelIds: number[];
+};
+
+export function GuruForm({
+  mapel,
+  guruId,
+  initial,
+  backHref,
+}: {
+  mapel: { id: number; namaMapel: string }[];
+  guruId?: number;
+  initial?: Partial<GuruFormValues>;
+  backHref: string;
+}) {
+  const action = guruId
+    ? updateGuruByAdmin.bind(null, guruId)
+    : createGuruByAdmin;
+  const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
     <form
       action={formAction}
       onSubmit={(e) => {
         const el = e.currentTarget as HTMLFormElement;
-        if ((el.querySelector(".mf-success") as HTMLElement | null)) el.reset();
+        if (!guruId && el.querySelector(".mf-success")) el.reset();
       }}
       className="card space-y-5 p-6 sm:p-8"
     >
-      <h2 className="font-display text-base font-bold text-slate-900">Formulir Guru Baru</h2>
+      <h2 className="font-display text-base font-bold text-slate-900">
+        {guruId ? "Edit Data Guru" : "Formulir Guru Baru"}
+      </h2>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="gNama" className="label">Nama Lengkap</label>
-          <input id="gNama" name="nama" type="text" required minLength={3} className="input" placeholder="Nama guru" />
+          <input
+            id="gNama"
+            name="nama"
+            type="text"
+            required
+            minLength={3}
+            defaultValue={initial?.nama}
+            className="input"
+            placeholder="Nama guru"
+          />
         </div>
         <div>
           <label htmlFor="gNip" className="label">NIP</label>
-          <input id="gNip" name="nip" type="text" required className="input" placeholder="Contoh: 198706152010121002" />
+          <input
+            id="gNip"
+            name="nip"
+            type="text"
+            required
+            defaultValue={initial?.nip}
+            className="input"
+            placeholder="Contoh: 198706152010121002"
+          />
         </div>
         <div>
           <label htmlFor="gEmail" className="label">Email</label>
-          <input id="gEmail" name="email" type="email" required className="input" placeholder="nama@kosgoro.sch.id" />
+          <input
+            id="gEmail"
+            name="email"
+            type="email"
+            required
+            defaultValue={initial?.email}
+            className="input"
+            placeholder="nama@kosgoro.sch.id"
+          />
         </div>
         <div>
-          <label htmlFor="gPassword" className="label">Password Awal</label>
-          <input id="gPassword" name="password" type="text" required minLength={6} className="input" placeholder="Minimal 6 karakter" />
+          <label htmlFor="gPassword" className="label">
+            Password{" "}
+            {guruId && <span className="text-xs font-normal text-slate-400">(Kosongkan bila tidak diubah)</span>}
+          </label>
+          <input
+            id="gPassword"
+            name="password"
+            type="text"
+            required={!guruId}
+            minLength={6}
+            className="input"
+            placeholder={guruId ? "••••••" : "Minimal 6 karakter"}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="gJabatan" className="label">
+          Jabatan <span className="text-xs font-normal text-slate-400">(Opsional)</span>
+        </label>
+        <input
+          id="gJabatan"
+          name="jabatan"
+          type="text"
+          defaultValue={initial?.jabatan}
+          className="input"
+          placeholder="Contoh: Waka. Bid. Kurikulum / Guru Mapel"
+        />
+      </div>
+
+      <div>
+        <p className="label">Foto</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          {initial?.foto ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={initial.foto}
+              alt="Foto guru"
+              className="h-24 w-24 shrink-0 rounded-xl border border-slate-200 object-cover"
+            />
+          ) : null}
+          <div className="flex-1 space-y-3">
+            <div>
+              <label htmlFor="gFoto" className="mb-1.5 block text-xs font-medium text-slate-500">
+                URL Foto
+              </label>
+              <input
+                id="gFoto"
+                name="foto"
+                type="text"
+                defaultValue={initial?.foto}
+                className="input"
+                placeholder="https://... atau /uploads/..."
+              />
+            </div>
+            <div>
+              <label htmlFor="gFotoFile" className="mb-1.5 block text-xs font-medium text-slate-500">
+                Atau Upload File
+              </label>
+              <input
+                id="gFotoFile"
+                name="fotoFile"
+                type="file"
+                accept="image/*"
+                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100"
+              />
+            </div>
+            <p className="text-xs text-slate-500">
+              Isi salah satu: tempel URL foto atau unggah file gambar. Upload file akan menggantikan URL.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -54,6 +177,7 @@ export function GuruForm({ mapel }: { mapel: { id: number; namaMapel: string }[]
                   type="checkbox"
                   name="mapelId"
                   value={m.id}
+                  defaultChecked={initial?.mapelIds?.includes(m.id)}
                   className="h-4 w-4 accent-brand-600"
                 />
                 {m.namaMapel}
@@ -74,10 +198,13 @@ export function GuruForm({ mapel }: { mapel: { id: number; namaMapel: string }[]
         </p>
       )}
 
-      <button type="submit" disabled={pending} className="btn-primary">
-        <Icon name="person_add" className="text-xl" />
-        {pending ? "Menyimpan..." : "Buat Akun Guru"}
-      </button>
+      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+        <Link href={backHref} className="btn-outline">Batal</Link>
+        <button type="submit" disabled={pending} className="btn-primary">
+          <Icon name={guruId ? "save" : "person_add"} className="text-xl" />
+          {pending ? "Menyimpan..." : guruId ? "Simpan Perubahan" : "Buat Akun Guru"}
+        </button>
+      </div>
     </form>
   );
 }

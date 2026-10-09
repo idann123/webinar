@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/session";
 import { toKegiatanCardData } from "@/lib/mappers";
-import { inferKegiatanCoverUrl } from "@/lib/thumbnail";
+import { resolveKegiatanCover } from "@/lib/thumbnail";
 import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 import { SiswaKegiatanList } from "@/components/siswa/SiswaKegiatanList";
 
@@ -26,7 +26,7 @@ export default async function SiswaKegiatanPage() {
   const items = kegiatan.map((k) => ({
     kegiatan: {
       ...toKegiatanCardData(k),
-      coverUrl: k.coverUrl ?? inferKegiatanCoverUrl(k.materi),
+      coverUrl: resolveKegiatanCover(k.coverUrl, k.materi),
     },
     registered: k.pendaftaran.length > 0,
   }));
