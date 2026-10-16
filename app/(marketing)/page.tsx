@@ -42,8 +42,31 @@ const FEATURE_SPAN = [
   "md:col-span-4",
 ] as const;
 
+// Obrolan dan reaksi pada tiruan ruang webinar (dekoratif)
+const CHAT = [
+  { nama: "Dimas", teks: "Materinya jelas banget! 🔥", delay: "0.8s", tone: "text-sky-300" },
+  { nama: "Putri", teks: "Slidenya boleh dibagikan?", delay: "3.6s", tone: "text-emerald-300" },
+  { nama: "Raka", teks: "Sudah paham, lanjut kak 👍", delay: "6.4s", tone: "text-amber-300" },
+] as const;
+
+const REACTIONS = [
+  { e: "👏", x: "-18px", right: "8%", delay: "0s" },
+  { e: "🔥", x: "14px", right: "22%", delay: "1.3s" },
+  { e: "👍", x: "-10px", right: "36%", delay: "2.6s" },
+  { e: "💡", x: "20px", right: "14%", delay: "3.9s" },
+] as const;
+
+const PESERTA = [
+  { n: "DM", c: "bg-sky-400" },
+  { n: "PU", c: "bg-emerald-400" },
+  { n: "RK", c: "bg-amber-400" },
+  { n: "AS", c: "bg-rose-400" },
+] as const;
+
 const CSS = `
 html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+
+@property --n { syntax: "<integer>"; inherits: false; initial-value: 0; }
 
 .hero-in { animation: fade-up .8s cubic-bezier(.16,1,.3,1) both; animation-delay: var(--d, 0ms); }
 .hero-in-right { animation: fade-left .9s cubic-bezier(.16,1,.3,1) both; animation-delay: var(--d, 0ms); }
@@ -51,6 +74,22 @@ html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
 .float-slow-alt { animation: float 5s ease-in-out 1s infinite reverse; }
 .drift { animation: drift 14s ease-in-out infinite; }
 .drift-alt { animation: drift 18s ease-in-out infinite reverse; }
+
+/* Ruang webinar: titik LIVE, gelombang suara, grafik, obrolan, reaksi */
+.kenburns { animation: kenburns 24s ease-in-out infinite alternate; }
+.live-dot { animation: live 1.8s ease-in-out infinite; }
+.wave { transform-origin: bottom; animation: wave 1s ease-in-out infinite; }
+.bar-grow { transform-origin: bottom; animation: bar-grow .9s cubic-bezier(.16,1,.3,1) both; }
+.chat-loop { animation: chat-loop 12s ease-in-out infinite both; }
+.react { animation: react 4.5s ease-out infinite both; }
+.bob { animation: bob 1.6s ease-in-out infinite; }
+.count-up {
+  counter-reset: n var(--n);
+  animation: count 1.2s cubic-bezier(.16,1,.3,1) both;
+  animation-delay: var(--d, 0ms);
+  font-variant-numeric: tabular-nums;
+}
+.count-up::before { content: counter(n); }
 
 @supports (animation-timeline: view()) {
   .reveal {
@@ -64,10 +103,20 @@ html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
 @keyframes fade-left { from { opacity: 0; transform: translateX(40px) scale(.97); } to { opacity: 1; transform: none; } }
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 @keyframes drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,20px) scale(1.08); } }
+@keyframes kenburns { from { transform: scale(1.03); } to { transform: scale(1.14) translate(-1.5%, -1%); } }
+@keyframes live { 0%,100% { box-shadow: 0 0 0 0 rgb(239 68 68 / .65); } 50% { box-shadow: 0 0 0 6px rgb(239 68 68 / 0); } }
+@keyframes wave { 0%,100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
+@keyframes bar-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes chat-loop { 0% { opacity: 0; transform: translateY(10px); } 6%,80% { opacity: 1; transform: none; } 90%,100% { opacity: 0; } }
+@keyframes react { 0% { opacity: 0; transform: translateY(0) scale(.6); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-120px) translateX(var(--x, 0)) scale(1.15); } }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+@keyframes count { from { --n: 0; } to { --n: var(--to); } }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .hero-in, .hero-in-right, .float-slow, .float-slow-alt, .drift, .drift-alt, .reveal { animation: none !important; }
+  .hero-in, .hero-in-right, .float-slow, .float-slow-alt, .drift, .drift-alt, .reveal,
+  .live-dot, .wave, .bar-grow, .chat-loop, .react, .bob, .count-up, .kenburns { animation: none !important; }
+  .react { display: none; }
 }
 `;
 
@@ -145,7 +194,7 @@ export default async function HomePage() {
   const spotlight = recentCards[0];
 
   const stats = [
-    { value: kegiatanCount, label: "Kegiatan" },
+    { value: kegiatanCount, label: "Webinar & kegiatan" },
     { value: siswaCount, label: "Siswa terdaftar" },
     { value: mapelCount, label: "Mata pelajaran" },
   ];
@@ -153,125 +202,248 @@ export default async function HomePage() {
   return (
     <>
       <style>{CSS}</style>
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        {/* pola titik + cahaya lembut */}
+
+      {/* HERO — ruang webinar */}
+      <section className="relative overflow-hidden rounded-b-[2.5rem] bg-slate-950">
+        {/* foto sekolah sebagai latar: terlihat jelas di kanan, gelap di kiri agar teks tetap terbaca */}
+        <div aria-hidden className="absolute inset-0 overflow-hidden">
+          <div
+            className="kenburns absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: "url(/gambarsekolah.jpg)" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/25" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/30" />
+        </div>
+
+        {/* cahaya + kisi halus */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-60"
+          className="absolute inset-0"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgb(148 163 184 / 0.35) 1px, transparent 0)",
-            backgroundSize: "28px 28px",
-            maskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
-            WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
+              "radial-gradient(55% 55% at 85% 15%, rgb(56 189 248 / 0.32), transparent 70%), radial-gradient(50% 50% at 8% 95%, rgb(37 99 235 / 0.5), transparent 70%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.06) 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+            maskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
+            WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
           }}
         />
         <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="drift absolute -left-24 -top-24 h-96 w-96 rounded-full bg-brand-200/50 blur-3xl" />
-          <div className="drift-alt absolute -right-16 top-20 h-80 w-80 rounded-full bg-sky-200/50 blur-3xl" />
+          <div className="drift absolute -left-24 top-10 h-80 w-80 rounded-full bg-brand-500/25 blur-3xl" />
+          <div className="drift-alt absolute right-0 top-40 h-72 w-72 rounded-full bg-sky-400/20 blur-3xl" />
         </div>
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-14 sm:px-6 md:pb-24 md:pt-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
-          {/* Kiri: teks */}
+        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-14 sm:px-6 md:pb-28 md:pt-20 lg:grid-cols-[1fr_1.05fr] lg:gap-12">
+          {/* Kiri: pesan utama */}
           <div>
-            <span style={d(0)} className="hero-in inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 py-1.5 pl-2 pr-4 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-white">
-                <Icon name="school" className="text-sm" filled />
-              </span>
-              Platform pembelajaran digital SMK Kosgoro
+            <span
+              style={d(0)}
+              className="hero-in inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 py-1.5 pl-3 pr-4 text-xs font-semibold text-white backdrop-blur"
+            >
+              <span className="live-dot h-2 w-2 rounded-full bg-red-500" />
+              Webinar pembelajaran digital · SMK Kosgoro
             </span>
 
-            <h1 style={d(100)} className="hero-in mt-6 font-display text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              Belajar bersama guru, langsung dari sekolah
+            <h1
+              style={d(100)}
+              className="hero-in mt-6 font-display text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl"
+            >
+              Belajar seru lewat webinar,{" "}
+              <span className="bg-gradient-to-r from-sky-300 via-brand-300 to-sky-200 bg-clip-text text-transparent">
+                bareng guru favoritmu
+              </span>
             </h1>
 
-            <p style={d(200)} className="hero-in mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-              Temukan kegiatan pembelajaran sesuai minatmu, daftar dengan satu
-              klik, dan akses semua materi dalam satu platform untuk siswa dan
-              guru SMK Kosgoro.
+            <p style={d(200)} className="hero-in mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
+              Pilih webinar sesuai minatmu, daftar cuma sekali klik, lalu buka
+              materinya kapan saja, dari laptop sampai HP.
             </p>
 
             <div style={d(300)} className="hero-in mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/kegiatan"
-                className="btn-primary w-full px-7 py-3 text-base shadow-lg shadow-brand-600/25 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-7 py-3 text-base font-bold text-brand-700 shadow-lg shadow-brand-900/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-50 active:scale-[0.98] sm:w-auto"
               >
-                <Icon name="explore" className="text-xl" />
-                Lihat kegiatan
+                <Icon name="play_circle" className="text-xl" filled />
+                Lihat jadwal webinar
               </Link>
-              <Link href="/register" className="btn-outline w-full bg-white/70 px-7 py-3 text-base backdrop-blur sm:w-auto">
-                <Icon name="person_add" className="text-xl" />
-                Daftar sebagai siswa
+              <Link
+                href="/login"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/25 px-7 py-3 text-base font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 active:scale-[0.98] sm:w-auto"
+              >
+                <Icon name="login" className="text-xl" />
+                Masuk
               </Link>
             </div>
 
+            <ul style={d(380)} className="hero-in mt-7 flex flex-wrap gap-2">
+              {[
+                { icon: "touch_app", t: "Daftar 1 klik" },
+                { icon: "replay", t: "Materi bisa dibuka lagi" },
+                { icon: "smartphone", t: "Bisa dari HP" },
+              ].map((c) => (
+                <li
+                  key={c.t}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 ring-1 ring-white/10"
+                >
+                  <Icon name={c.icon} className="text-sm text-sky-300" />
+                  {c.t}
+                </li>
+              ))}
+            </ul>
+
             {!dbError && (
-              <dl style={d(400)} className="hero-in mt-12 grid max-w-md grid-cols-3 divide-x divide-slate-200">
-                {stats.map((s) => (
+              <dl style={d(460)} className="hero-in mt-10 grid max-w-md grid-cols-3 divide-x divide-white/15">
+                {stats.map((s, i) => (
                   <div key={s.label} className="px-4 first:pl-0">
-                    <dd className="font-display text-2xl font-extrabold text-slate-900 sm:text-3xl">
-                      {s.value}
-                      <span className="text-brand-600">+</span>
+                    <dd className="font-display text-2xl font-extrabold text-white sm:text-3xl">
+                      <span
+                        className="count-up"
+                        style={{ "--to": s.value, "--d": `${600 + i * 120}ms` } as CSSProperties}
+                      >
+                        <span className="sr-only">{s.value}</span>
+                      </span>
+                      <span className="text-sky-300">+</span>
                     </dd>
-                    <dt className="mt-0.5 text-xs text-slate-500">{s.label}</dt>
+                    <dt className="mt-0.5 text-xs text-slate-400">{s.label}</dt>
                   </div>
                 ))}
               </dl>
             )}
           </div>
 
-          {/* Kanan: pratinjau kegiatan */}
-          <div style={d(250)} className="hero-in-right relative mx-auto w-full max-w-md lg:max-w-none">
-            <div aria-hidden className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-brand-200/60 to-sky-200/60 blur-2xl" />
+          {/* Kanan: tiruan ruang webinar dengan data kegiatan terbaru */}
+          <div style={d(250)} className="hero-in-right relative mx-auto w-full max-w-xl lg:max-w-none">
+            <div aria-hidden className="absolute -inset-4 rounded-[2.25rem] bg-gradient-to-br from-brand-500/40 to-sky-400/30 blur-2xl" />
 
-            <div className="float-slow relative rounded-3xl border border-white/70 bg-white p-6 shadow-2xl shadow-slate-900/10 ring-1 ring-slate-200">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-                  <Icon name="event_available" className="text-sm" filled />
-                  {spotlight ? spotlight.mapel : "Kegiatan pembelajaran"}
+            <div className="float-slow relative overflow-hidden rounded-3xl border border-white/15 bg-slate-900/85 shadow-2xl shadow-black/50 backdrop-blur">
+              {/* bilah judul jendela */}
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5">
+                <span className="flex gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-rose-400/80" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
                 </span>
-                <span className="text-xs text-slate-400">
-                  {spotlight ? formatTanggal(spotlight.tanggal) : "Segera hadir"}
+                <span className="truncate text-xs font-medium text-slate-300">Ruang Webinar · SMK Kosgoro</span>
+                <span className="flex items-center gap-1.5 rounded-full bg-red-500/90 px-2.5 py-0.5 text-[11px] font-bold text-white">
+                  <span className="live-dot h-1.5 w-1.5 rounded-full bg-white" />
+                  LIVE
                 </span>
               </div>
 
-              <h2 className="mt-4 font-display text-xl font-bold leading-snug text-slate-900">
-                {spotlight ? spotlight.judulPembelajaran : "Jadwal kegiatan akan tampil di sini"}
-              </h2>
+              <div className="grid gap-3 p-3 sm:grid-cols-[1fr_10.5rem]">
+                {/* panggung / slide */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 via-brand-700 to-slate-800 p-5">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white">
+                    <Icon name="event_available" className="text-sm" filled />
+                    {spotlight ? spotlight.mapel : "Webinar pembelajaran"}
+                  </span>
+                  <h2 className="mt-3 max-w-[16rem] font-display text-xl font-extrabold leading-snug text-white sm:text-2xl">
+                    {spotlight ? spotlight.judulPembelajaran : "Jadwal webinar akan tampil di sini"}
+                  </h2>
 
-              <div className="mt-5 flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 text-white">
-                  <Icon name="person" className="text-xl" filled />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-500">Guru pengajar</p>
-                  <p className="truncate text-sm font-semibold text-slate-900">
-                    {spotlight ? spotlight.guru : "-"}
-                  </p>
-                </div>
-                {spotlight && (
-                  <div className="ml-auto text-right">
-                    <p className="text-xs text-slate-500">Peserta</p>
-                    <p className="text-sm font-semibold text-slate-900">{spotlight.jumlahSiswaDaftar}</p>
+                  <div className="mt-5 flex h-16 items-end gap-2">
+                    {[40, 65, 50, 85, 70, 95].map((h, i) => (
+                      <span
+                        key={i}
+                        className="bar-grow w-5 rounded-t-md bg-gradient-to-t from-sky-300 to-white/90"
+                        style={{ height: `${h}%`, animationDelay: `${700 + i * 110}ms` }}
+                      />
+                    ))}
                   </div>
+
+                  {/* pembicara */}
+                  <div className="absolute bottom-3 right-3 flex items-center gap-2 rounded-xl bg-slate-950/60 p-2 pr-3 backdrop-blur">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white font-display text-xs font-extrabold text-brand-700">
+                      {spotlight ? inisial(spotlight.guru) : <Icon name="person" className="text-lg" filled />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block max-w-[7rem] truncate text-xs font-semibold text-white">
+                        {spotlight ? spotlight.guru : "Guru pengajar"}
+                      </span>
+                      <span className="flex h-3 items-end gap-0.5">
+                        {[0, 0.2, 0.4, 0.1].map((dl, i) => (
+                          <span key={i} className="wave h-full w-0.5 rounded-full bg-emerald-300" style={{ animationDelay: `${dl}s` }} />
+                        ))}
+                      </span>
+                    </span>
+                  </div>
+
+                  {/* reaksi melayang */}
+                  <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-full">
+                    {REACTIONS.map((r) => (
+                      <span
+                        key={r.e}
+                        className="react absolute bottom-10 text-xl"
+                        style={{ right: r.right, animationDelay: r.delay, "--x": r.x } as CSSProperties}
+                      >
+                        {r.e}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* obrolan */}
+                <div className="hidden flex-col rounded-2xl bg-white/5 p-3 ring-1 ring-white/10 sm:flex">
+                  <p className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
+                    <Icon name="chat" className="text-sm" />
+                    Obrolan
+                  </p>
+                  <div className="mt-3 flex-1 space-y-2.5">
+                    {CHAT.map((c) => (
+                      <div key={c.nama} className="chat-loop" style={{ animationDelay: c.delay }}>
+                        <p className={`text-[10px] font-bold ${c.tone}`}>{c.nama}</p>
+                        <p className="rounded-lg rounded-tl-none bg-white/10 px-2 py-1.5 text-xs text-slate-100">{c.teks}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* bilah kontrol + ajakan daftar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex -space-x-2">
+                    {PESERTA.map((p) => (
+                      <span key={p.n} className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-slate-900 ring-2 ring-slate-900 ${p.c}`}>
+                        {p.n}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="text-xs text-slate-300">
+                    <span className="font-semibold text-white">{spotlight ? spotlight.jumlahSiswaDaftar : 0}</span> peserta
+                    {spotlight && <> · {formatTanggal(spotlight.tanggal)}</>}
+                  </span>
+                </div>
+
+                {spotlight ? (
+                  <Link
+                    href={`/kegiatan/${spotlight.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-sky-400 px-3.5 py-2 text-xs font-bold text-slate-950 transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-300 active:scale-95"
+                  >
+                    Gabung sekarang
+                    <Icon name="arrow_forward" className="text-base" />
+                  </Link>
+                ) : (
+                  <Link
+                    href="/kegiatan"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-white/20"
+                  >
+                    Buka katalog
+                  </Link>
                 )}
               </div>
-
-              {spotlight ? (
-                <Link href={`/kegiatan/${spotlight.id}`} className="btn-primary mt-5 w-full">
-                  Lihat detail
-                  <Icon name="arrow_forward" className="text-lg" />
-                </Link>
-              ) : (
-                <Link href="/kegiatan" className="btn-outline mt-5 w-full">
-                  Buka katalog
-                </Link>
-              )}
             </div>
 
             {/* chip melayang */}
-            <div className="float-slow-alt absolute -bottom-5 -left-3 hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 shadow-lg sm:flex">
+            <div className="float-slow-alt absolute -bottom-5 -left-3 hidden items-center gap-2 rounded-2xl border border-white/15 bg-white px-4 py-2.5 shadow-xl sm:flex">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                 <Icon name="check_circle" className="text-lg" filled />
               </span>
@@ -281,8 +453,21 @@ export default async function HomePage() {
                 tercatat otomatis
               </span>
             </div>
+            <div className="float-slow absolute -right-3 -top-4 hidden items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-bold text-slate-900 shadow-lg sm:flex">
+              <Icon name="pan_tool" className="text-sm" filled />
+              Izin bertanya!
+            </div>
           </div>
         </div>
+
+        <a
+          href="#fitur"
+          aria-label="Gulir ke bagian fitur"
+          className="absolute bottom-5 left-1/2 hidden -translate-x-1/2 items-center gap-1 text-xs font-semibold text-slate-400 transition-colors hover:text-white md:inline-flex"
+        >
+          Jelajahi
+          <Icon name="arrow_downward" className="bob text-base" />
+        </a>
       </section>
 
       {/* FEATURES — bento */}
@@ -301,32 +486,29 @@ export default async function HomePage() {
             const featured = i === 0;
             return (
               <div key={f.title} className={`reveal ${FEATURE_SPAN[i]}`}>
-              <div
-                className={`group relative h-full overflow-hidden rounded-3xl p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
-                  featured
+                <div
+                  className={`group relative h-full overflow-hidden rounded-3xl p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${featured
                     ? "bg-gradient-to-br from-brand-600 to-brand-700 text-white"
                     : "border border-slate-200 bg-white"
-                }`}
-              >
-                {featured && (
-                  <div aria-hidden className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/10" />
-                )}
-                <div
-                  className={`relative flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${
-                    featured ? "bg-white/15 text-white" : "bg-brand-100 text-brand-700"
-                  }`}
+                    }`}
                 >
-                  <Icon name={f.icon} className="text-2xl" filled />
+                  {featured && (
+                    <div aria-hidden className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/10" />
+                  )}
+                  <div
+                    className={`relative flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${featured ? "bg-white/15 text-white" : "bg-brand-100 text-brand-700"
+                      }`}
+                  >
+                    <Icon name={f.icon} className="text-2xl" filled />
+                  </div>
+                  <h3 className="relative mt-6 font-display text-lg font-bold">{f.title}</h3>
+                  <p
+                    className={`relative mt-2 max-w-md text-sm leading-relaxed ${featured ? "text-brand-100" : "text-slate-500"
+                      }`}
+                  >
+                    {f.desc}
+                  </p>
                 </div>
-                <h3 className="relative mt-6 font-display text-lg font-bold">{f.title}</h3>
-                <p
-                  className={`relative mt-2 max-w-md text-sm leading-relaxed ${
-                    featured ? "text-brand-100" : "text-slate-500"
-                  }`}
-                >
-                  {f.desc}
-                </p>
-              </div>
               </div>
             );
           })}
@@ -423,11 +605,11 @@ export default async function HomePage() {
             <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
               {recentCards.map((k) => (
                 <div key={k.id} className="reveal h-full">
-                <KegiatanCard kegiatan={k} href={`/kegiatan/${k.id}`}>
-                  <Link href={`/kegiatan/${k.id}`} className="btn-outline w-full">
-                    Lihat detail
-                  </Link>
-                </KegiatanCard>
+                  <KegiatanCard kegiatan={k} href={`/kegiatan/${k.id}`}>
+                    <Link href={`/kegiatan/${k.id}`} className="btn-outline w-full">
+                      Lihat detail
+                    </Link>
+                  </KegiatanCard>
                 </div>
               ))}
             </div>
@@ -449,37 +631,32 @@ export default async function HomePage() {
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
         <div className="reveal">
-        <div className="relative overflow-hidden rounded-[2rem] bg-slate-900 px-6 py-14 text-white shadow-2xl sm:px-14">
-          <div aria-hidden className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-brand-500/40 blur-3xl" />
-          <div aria-hidden className="absolute -bottom-24 left-10 h-64 w-64 rounded-full bg-sky-500/25 blur-3xl" />
+          <div className="relative overflow-hidden rounded-[2rem] bg-slate-900 px-6 py-14 text-white shadow-2xl sm:px-14">
+            <div aria-hidden className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-brand-500/40 blur-3xl" />
+            <div aria-hidden className="absolute -bottom-24 left-10 h-64 w-64 rounded-full bg-sky-500/25 blur-3xl" />
 
-          <div className="relative flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
-            <div className="max-w-xl">
-              <h2 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Siap untuk mulai belajar?
-              </h2>
-              <p className="mt-3 text-slate-300">
-                Buat akun siswa dan ikuti kegiatan pembelajaran minggu ini.
-              </p>
-            </div>
+            <div className="relative flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
+              <div className="max-w-xl">
+                <h2 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+                  Siap untuk mulai belajar?
+                </h2>
+                <p className="mt-3 text-slate-300">
+                  Masuk dengan akun sekolah Anda dan ikuti kegiatan pembelajaran
+                  minggu ini.
+                </p>
+              </div>
 
-            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <Link
-                href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow transition hover:bg-brand-50"
-              >
-                <Icon name="person_add" className="text-lg" />
-                Daftar sekarang
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                Sudah punya akun? Masuk
-              </Link>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  <Icon name="login" className="text-lg" />
+                  Masuk
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </section>
     </>

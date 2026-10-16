@@ -224,3 +224,9 @@ Tahap 1 (Wajib jalan dulu): Auth (daftar/login), CRUD Kegiatan oleh Guru, List &
 Tahap 2: Upload & akses Materi, Update status kegiatan, Dashboard Admin (data master)
 Tahap 3: Absensi/kehadiran, Statistik, Notifikasi
 Tahap 4 (Opsional): Kalender, chat, mode offline
+
+Role	Email	                Password
+Admin	admin@kosgoro.sch.id	admin123
+Guru	budi@kosgoro.sch.id	    guru123
+Guru	sarah@kosgoro.sch.id	guru123
+Siswa	siswa@kosgoro.sch.id	siswa123

@@ -5,13 +5,6 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password wajib diisi"),
 });
 
-export const registerSchema = z.object({
-  nama: z.string().min(3, "Nama minimal 3 karakter"),
-  email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
-  kelasId: z.coerce.number().int().positive("Pilih kelas terlebih dahulu"),
-});
-
 export const kegiatanSchema = z.object({
   judulPembelajaran: z.string().min(3, "Judul minimal 3 karakter"),
   mapelId: z.coerce.number().int().positive("Pilih mata pelajaran"),

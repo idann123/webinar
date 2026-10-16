@@ -72,17 +72,9 @@ export function Navbar({ user }: { user: NavUser }) {
               Dashboard
             </Link>
           ) : (
-            <>
-              <Link
-                href="/login"
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50"
-              >
-                Masuk
-              </Link>
-              <Link href="/register" className="btn-primary">
-                Daftar
-              </Link>
-            </>
+            <Link href="/login" className="btn-primary">
+              Masuk
+            </Link>
           )}
         </div>
 
@@ -119,18 +111,13 @@ export function Navbar({ user }: { user: NavUser }) {
                   <Icon name="dashboard" className="text-lg" /> Dashboard
                 </Link>
               ) : (
-                <>
-                  <Link
-                    href="/login"
-                    onClick={() => setOpen(false)}
-                    className="btn-outline w-full"
-                  >
-                    Masuk
-                  </Link>
-                  <Link href="/register" onClick={() => setOpen(false)} className="btn-primary w-full">
-                    Daftar Akun
-                  </Link>
-                </>
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="btn-primary w-full"
+                >
+                  Masuk
+                </Link>
               )}
             </div>
           </div>

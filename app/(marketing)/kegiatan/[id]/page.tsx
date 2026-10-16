@@ -175,9 +175,6 @@ export default async function KegiatanDetailPage({
                   <Link href="/login" className="btn-primary w-full">
                     Masuk
                   </Link>
-                  <Link href="/register" className="btn-outline w-full">
-                    Daftar Akun Siswa
-                  </Link>
                 </div>
               )}
             </div>

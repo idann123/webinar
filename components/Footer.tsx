@@ -43,7 +43,6 @@ export function Footer() {
           <h4 className="text-sm font-bold text-slate-900">Akun</h4>
           <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
             <li><Link href="/login" className="hover:text-brand-700">Masuk</Link></li>
-            <li><Link href="/register" className="hover:text-brand-700">Daftar Siswa</Link></li>
             <li><Link href="/kontak" className="hover:text-brand-700">Hubungi Kami</Link></li>
           </ul>
         </div>
