@@ -204,7 +204,7 @@ export default async function HomePage() {
       <style>{CSS}</style>
 
       {/* HERO — ruang webinar */}
-      <section className="relative overflow-hidden rounded-b-[2.5rem] bg-slate-950">
+      <section className="relative overflow-hidden rounded-b-[2.5rem] bg-slate-950 shadow-[0_22px_45px_-12px_rgba(15,23,42,0.45)]">
         {/* foto sekolah sebagai latar: terlihat jelas di kanan, gelap di kiri agar teks tetap terbaca */}
         <div aria-hidden className="absolute inset-0 overflow-hidden">
           <div
@@ -471,8 +471,9 @@ export default async function HomePage() {
       </section>
 
       {/* FEATURES — bento */}
-      <section id="fitur" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
-        <div className="reveal max-w-2xl">
+      <section id="fitur" className="bg-slate-50">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+          <div className="reveal max-w-2xl">
           <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
             Kenapa belajar di platform ini?
           </h2>
@@ -512,11 +513,12 @@ export default async function HomePage() {
               </div>
             );
           })}
+          </div>
         </div>
       </section>
 
       {/* TENAGA PENDIDIK */}
-      <section className="border-t border-slate-100 bg-white">
+      <section className="border-t border-slate-100 bg-slate-50">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
           <div className="reveal mx-auto max-w-2xl text-center">
             <span className="badge border-brand-200 bg-brand-50 text-brand-700">
@@ -586,7 +588,7 @@ export default async function HomePage() {
       </section>
 
       {/* RECENT */}
-      <section id="kegiatan" className="border-y border-slate-200 bg-slate-50/70">
+      <section id="kegiatan" className="border-y border-slate-200 bg-slate-50">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
