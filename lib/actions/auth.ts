@@ -1,0 +1,100 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import bcrypt from "bcryptjs";
+import { db } from "@/lib/db";
+import { createSession, destroySession, getSession } from "@/lib/session";
+import { loginSchema } from "@/lib/validators";
+
+export type AuthState = { error?: string; success?: string };
+
+async function parseEmailInput(value: string): Promise<string> {
+  return value.trim().toLowerCase();
+}
+
+export async function loginAction(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0]?.message ?? "Data tidak valid" };
+  }
+
+  const email = await parseEmailInput(parsed.data.email);
+  const user = await db.user.findUnique({ where: { email } });
+
+  if (!user) {
+    return { error: "Email atau password salah" };
+  }
+
+  const match = await bcrypt.compare(parsed.data.password, user.password);
+  if (!match) {
+    return { error: "Email atau password salah" };
+  }
+
+  if (user.status === "NONAKTIF") {
+    return { error: "Akun Anda dinonaktifkan. Hubungi admin sekolah." };
+  }
+
+  await createSession({
+    userId: user.id,
+    nama: user.nama,
+    email: user.email,
+    role: user.role,
+  });
+
+  redirect(`/dashboard/${user.role.toLowerCase()}`);
+}
+
+export async function logoutAction() {
+  await destroySession();
+  revalidatePath("/dashboard", "layout");
+  redirect("/login");
+}
+
+export async function updatePasswordAction(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const session = await getSession();
+  if (!session) {
+    return { error: "Sesi tidak ditemukan, silakan login ulang." };
+  }
+
+  const currentPassword = String(formData.get("currentPassword") || "");
+  const newPassword = String(formData.get("newPassword") || "");
+  const confirmPassword = String(formData.get("confirmPassword") || "");
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    return { error: "Semua kolom password wajib diisi." };
+  }
+
+  if (newPassword.length < 6) {
+    return { error: "Password baru minimal 6 karakter." };
+  }
+
+  if (newPassword !== confirmPassword) {
+    return { error: "Konfirmasi password baru tidak cocok." };
+  }
+
+  const user = await db.user.findUnique({ where: { id: session.userId } });
+  if (!user) {
+    return { error: "Pengguna tidak ditemukan." };
+  }
+
+  const match = await bcrypt.compare(currentPassword, user.password);
+  if (!match) {
+    return { error: "Password saat ini salah." };
+  }
+
+  const hash = await bcrypt.hash(newPassword, 10);
+  await db.user.update({
+    where: { id: user.id },
+    data: { password: hash },
+  });
+
+  return { success: "Password Anda berhasil diperbarui!" };
+}
