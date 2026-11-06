@@ -6,7 +6,7 @@ import { daftarKegiatan } from "@/lib/actions/kegiatan";
 import { Icon } from "@/components/Icon";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { formatTanggal, tipeMateriLabel } from "@/lib/utils";
-import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
+import { isPendaftaranOpen, syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Detail Kegiatan" };
 
@@ -70,39 +70,61 @@ export default async function SiswaKegiatanDetailPage({
               {kegiatan.deskripsi || "Belum ada deskripsi untuk kegiatan ini."}
             </p>
 
-            {sudahTerdaftar && (
-              <>
-                <h2 className="mt-8 font-display text-lg font-bold text-slate-900">Materi Pembelajaran</h2>
-                {kegiatan.materi.length === 0 ? (
-                  <p className="mt-3 rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
-                    Materi belum diunggah oleh guru.
-                  </p>
-                ) : (
-                  <ul className="mt-3 space-y-2.5">
-                    {kegiatan.materi.map((m) => (
-                      <li key={m.id}>
-                        <a
-                          href={m.filePath}
-                          target={m.tipe === "LINK" ? "_blank" : "_self"}
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm transition-colors hover:border-brand-300 hover:bg-brand-50/50"
-                        >
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
-                            <Icon
-                              name={m.tipe === "PDF" ? "picture_as_pdf" : m.tipe === "VIDEO" ? "play_circle" : "link"}
-                              className="text-xl"
-                            />
-                          </span>
-                          <span className="flex-1 font-medium text-slate-800">{m.judulMateri}</span>
-                          <span className="badge border-slate-200 bg-slate-50 text-slate-600">
-                            {tipeMateriLabel[m.tipe]}
-                          </span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
+            <h2 className="mt-8 font-display text-lg font-bold text-slate-900">Materi Pembelajaran</h2>
+            {!sudahTerdaftar && (
+              <p className="mt-2 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <Icon name="lock" className="mt-0.5 text-lg" />
+                <span>
+                  {isPendaftaranOpen(kegiatan.status)
+                    ? "Daftar kegiatan ini untuk membuka materi."
+                    : "Pendaftaran ditutup, materi hanya untuk peserta terdaftar."}
+                </span>
+              </p>
+            )}
+            {kegiatan.materi.length === 0 ? (
+              <p className="mt-3 rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
+                Materi belum diunggah oleh guru.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-2.5">
+                {kegiatan.materi.map((m) => (
+                  <li key={m.id}>
+                    {sudahTerdaftar ? (
+                      <a
+                        href={m.filePath}
+                        target={m.tipe === "LINK" ? "_blank" : "_self"}
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm transition-colors hover:border-brand-300 hover:bg-brand-50/50"
+                      >
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
+                          <Icon
+                            name={m.tipe === "PDF" ? "picture_as_pdf" : m.tipe === "VIDEO" ? "play_circle" : "link"}
+                            className="text-xl"
+                          />
+                        </span>
+                        <span className="flex-1 font-medium text-slate-800">{m.judulMateri}</span>
+                        <span className="badge border-slate-200 bg-slate-50 text-slate-600">
+                          {tipeMateriLabel[m.tipe]}
+                        </span>
+                      </a>
+                    ) : (
+                      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-500">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-500">
+                          <Icon
+                            name={m.tipe === "PDF" ? "picture_as_pdf" : m.tipe === "VIDEO" ? "play_circle" : "link"}
+                            className="text-xl"
+                          />
+                        </span>
+                        <span className="flex-1 font-medium">{m.judulMateri}</span>
+                        <span className="badge border-slate-200 bg-white text-slate-500">
+                          {tipeMateriLabel[m.tipe]}
+                        </span>
+                        <Icon name="lock" className="text-lg text-slate-400" />
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
 
@@ -134,10 +156,12 @@ export default async function SiswaKegiatanDetailPage({
                   Anda terdaftar di kegiatan ini.
                 </p>
               </div>
-            ) : kegiatan.status === "SELESAI" ? (
+            ) : kegiatan.status !== "BELUM_MULAI" ? (
               <div className="card p-5">
                 <p className="rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-medium text-slate-600">
-                  Pendaftaran ditutup, kegiatan telah selesai.
+                  {kegiatan.status === "BERLANGSUNG"
+                    ? "Kegiatan sudah dimulai, pendaftaran ditutup."
+                    : "Pendaftaran ditutup, kegiatan telah selesai."}
                 </p>
               </div>
             ) : (

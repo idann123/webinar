@@ -4,7 +4,7 @@ import { Icon } from "@/components/Icon";
 import { KegiatanCard, type KegiatanCardData } from "@/components/KegiatanCard";
 import { toKegiatanCardData } from "@/lib/mappers";
 import { resolveKegiatanCover } from "@/lib/thumbnail";
-import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
+import { isPendaftaranOpen, syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Kegiatan Pembelajaran" };
 
@@ -55,10 +55,22 @@ export default async function KegiatanPublicPage() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {cards.map((k) => (
             <KegiatanCard key={k.id} kegiatan={k} href={`/kegiatan/${k.id}`}>
-              <Link href={`/kegiatan/${k.id}`} className="btn-outline w-full">
-                Lihat Detail & Daftar
-                <Icon name="arrow_forward" className="text-lg" />
-              </Link>
+              {isPendaftaranOpen(k.status) ? (
+                <Link href={`/kegiatan/${k.id}`} className="btn-outline-brand w-full">
+                  Lihat Detail & Daftar
+                  <Icon name="arrow_forward" className="text-lg" />
+                </Link>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <span className="block rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-center text-sm font-medium text-slate-500">
+                    Pendaftaran ditutup
+                  </span>
+                  <Link href={`/kegiatan/${k.id}`} className="btn-outline-brand w-full">
+                    <Icon name="visibility" className="text-lg" />
+                    Lihat Detail
+                  </Link>
+                </div>
+              )}
             </KegiatanCard>
           ))}
         </div>

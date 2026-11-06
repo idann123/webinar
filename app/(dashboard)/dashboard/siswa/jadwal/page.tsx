@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/session";
 import { Icon } from "@/components/Icon";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { formatTanggal } from "@/lib/utils";
-import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
+import { isPendaftaranOpen, syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Jadwal Pembelajaran" };
 
@@ -164,7 +164,7 @@ export default async function SiswaJadwalPage() {
 
                   <Link
                     href={`/dashboard/siswa/kegiatan/${k.id}`}
-                    className={`shrink-0 ${isBerlangsung ? "btn-primary" : "btn-outline"}`}
+                    className={`shrink-0 ${isBerlangsung ? "btn-primary" : "btn-outline-brand"}`}
                   >
                     <Icon name={isBerlangsung ? "play_arrow" : "visibility"} className="text-lg" />
                     {isBerlangsung ? "Masuk Sesi" : "Lihat Detail"}
@@ -185,6 +185,7 @@ export default async function SiswaJadwalPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {semuaMendatang.slice(0, 4).map((k) => {
               const sudahDaftar = registeredKegiatanIds.has(k.id);
+              const bisaDaftar = isPendaftaranOpen(k.status) && !sudahDaftar;
               return (
                 <div key={k.id} className="card flex flex-col justify-between p-5">
                   <div>
@@ -208,7 +209,11 @@ export default async function SiswaJadwalPage() {
                       href={`/dashboard/siswa/kegiatan/${k.id}`}
                       className="text-xs font-semibold text-brand-700 hover:underline"
                     >
-                      {sudahDaftar ? "Buka Kegiatan →" : "Detail & Daftar →"}
+                      {sudahDaftar
+                        ? "Buka Kegiatan →"
+                        : bisaDaftar
+                          ? "Detail & Daftar →"
+                          : "Lihat Detail →"}
                     </Link>
                   </div>
                 </div>

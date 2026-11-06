@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { requireRole, requireSession } from "@/lib/session";
 import { kegiatanSchema, materiLinkSchema } from "@/lib/validators";
 import { advanceStatus, deriveStatus, syncKegiatanStatuses } from "@/lib/kegiatan-status";
+import { kirimNotifikasiKegiatanBaru } from "@/lib/notifikasi";
 
 export type KegiatanState = { error?: string; success?: string };
 
@@ -46,7 +47,7 @@ export async function createKegiatan(
     return { error: "Anda tidak mengajar mata pelajaran tersebut." };
   }
 
-  await db.kegiatan.create({
+  const created = await db.kegiatan.create({
     data: {
       judulPembelajaran: parsed.data.judulPembelajaran.trim(),
       mapelId: parsed.data.mapelId,
@@ -59,6 +60,12 @@ export async function createKegiatan(
       coverUrl: parsed.data.coverUrl?.trim() ? parsed.data.coverUrl.trim() : null,
     },
   });
+
+  try {
+    await kirimNotifikasiKegiatanBaru(created.id);
+  } catch (error) {
+    console.error("Gagal mengirim notifikasi kegiatan baru", error);
+  }
 
   revalidatePath("/dashboard/guru");
   revalidatePath("/kegiatan");
@@ -111,6 +118,10 @@ export async function updateKegiatan(
     },
   });
 
+  await db.notifikasi.deleteMany({
+    where: { kegiatanId, tipe: "AKAN_MULAI" },
+  });
+
   revalidatePath("/dashboard/guru");
   revalidatePath("/kegiatan");
   revalidatePath("/");
@@ -149,6 +160,11 @@ export async function updateStatus(formData: FormData) {
     where: { id: kegiatanId },
     data: { status: status as "BELUM_MULAI" | "BERLANGSUNG" | "SELESAI" },
   });
+  if (status !== "BELUM_MULAI") {
+    await db.notifikasi.deleteMany({
+      where: { kegiatanId, tipe: "AKAN_MULAI" },
+    });
+  }
   await syncKegiatanStatuses();
   revalidatePath("/dashboard/guru");
   revalidatePath("/kegiatan");
@@ -168,7 +184,7 @@ export async function daftarKegiatan(formData: FormData) {
   await db.$transaction(async (tx) => {
     const kegiatan = await tx.kegiatan.findUnique({ where: { id: kegiatanId } });
     if (!kegiatan) return;
-    if (advanceStatus(kegiatan.status, deriveStatus(kegiatan)) === "SELESAI") return;
+    if (advanceStatus(kegiatan.status, deriveStatus(kegiatan)) !== "BELUM_MULAI") return;
 
     const sudah = await tx.pendaftaran.findUnique({
       where: { siswaId_kegiatanId: { siswaId: siswa.id, kegiatanId } },

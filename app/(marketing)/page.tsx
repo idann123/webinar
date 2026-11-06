@@ -606,7 +606,7 @@ export default async function HomePage() {
               {recentCards.map((k) => (
                 <div key={k.id} className="reveal h-full">
                   <KegiatanCard kegiatan={k} href={`/kegiatan/${k.id}`}>
-                    <Link href={`/kegiatan/${k.id}`} className="btn-outline w-full">
+                    <Link href={`/kegiatan/${k.id}`} className="btn-outline-brand w-full">
                       Lihat detail
                     </Link>
                   </KegiatanCard>

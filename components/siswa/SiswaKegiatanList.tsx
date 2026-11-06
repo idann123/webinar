@@ -6,6 +6,7 @@ import { KegiatanCard, type KegiatanCardData } from "@/components/KegiatanCard";
 import { Icon } from "@/components/Icon";
 import { cn } from "@/lib/utils";
 import { daftarKegiatan } from "@/lib/actions/kegiatan";
+import { isPendaftaranOpen } from "@/lib/kegiatan-status";
 
 export type SiswaKegiatanItem = { kegiatan: KegiatanCardData; registered: boolean };
 
@@ -80,11 +81,7 @@ export function SiswaKegiatanList({ items }: { items: SiswaKegiatanItem[] }) {
                   <Icon name="check_circle" className="text-lg" filled />
                   Sudah Terdaftar
                 </span>
-              ) : kegiatan.status === "SELESAI" ? (
-                <span className="block rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-center text-sm font-medium text-slate-500">
-                  Kegiatan selesai
-                </span>
-              ) : (
+              ) : isPendaftaranOpen(kegiatan.status) ? (
                 <div className="flex gap-2">
                   <form action={daftarKegiatan} className="flex-1">
                     <input type="hidden" name="kegiatanId" value={kegiatan.id} />
@@ -95,10 +92,23 @@ export function SiswaKegiatanList({ items }: { items: SiswaKegiatanItem[] }) {
                   </form>
                   <Link
                     href={`/dashboard/siswa/kegiatan/${kegiatan.id}`}
-                    className="btn-outline"
+                    className="btn-outline-brand"
                     aria-label="Lihat detail"
                   >
                     <Icon name="info" className="text-lg" />
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <span className="block rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-center text-sm font-medium text-slate-500">
+                    Pendaftaran ditutup
+                  </span>
+                  <Link
+                    href={`/dashboard/siswa/kegiatan/${kegiatan.id}`}
+                    className="btn-outline-brand w-full"
+                  >
+                    <Icon name="visibility" className="text-lg" />
+                    Lihat Detail
                   </Link>
                 </div>
               )}

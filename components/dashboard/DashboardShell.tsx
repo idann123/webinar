@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn, roleLabel } from "@/lib/utils";
 import { Icon } from "@/components/Icon";
+import { NotificationBell, type NotifikasiItem } from "@/components/dashboard/NotificationBell";
 import { logoutAction } from "@/lib/actions/auth";
 
 type User = { nama: string; role: "SISWA" | "GURU" | "ADMIN" };
@@ -34,7 +35,17 @@ const LINKS: Record<User["role"], { href: string; label: string; icon: string }[
   ],
 };
 
-export function DashboardShell({ user, children }: { user: User; children: React.ReactNode }) {
+export function DashboardShell({
+  user,
+  children,
+  notifications = [],
+  unreadCount = 0,
+}: {
+  user: User;
+  children: React.ReactNode;
+  notifications?: NotifikasiItem[];
+  unreadCount?: number;
+}) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const links = LINKS[user.role];
@@ -121,6 +132,9 @@ export function DashboardShell({ user, children }: { user: User; children: React
             Dashboard <span className="text-slate-300">/</span> {roleLabel[user.role]}
           </p>
           <div className="flex items-center gap-3">
+            {user.role === "SISWA" && (
+              <NotificationBell items={notifications} unreadCount={unreadCount} />
+            )}
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
               {user.nama.charAt(0).toUpperCase()}
             </span>

@@ -7,17 +7,29 @@ const ORDER: Record<StatusKegiatan, number> = {
   SELESAI: 2,
 };
 
+const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+
 function parseWaktu(tanggal: Date, waktu: string): number {
   const [hh, mm] = waktu.split(":").map(Number);
-  return Date.UTC(
-    tanggal.getUTCFullYear(),
-    tanggal.getUTCMonth(),
-    tanggal.getUTCDate(),
-    hh,
-    mm,
-    0,
-    0
+  return (
+    Date.UTC(
+      tanggal.getUTCFullYear(),
+      tanggal.getUTCMonth(),
+      tanggal.getUTCDate(),
+      hh,
+      mm,
+      0,
+      0
+    ) - WIB_OFFSET_MS
   );
+}
+
+export function isPendaftaranOpen(status: StatusKegiatan | string): boolean {
+  return status === "BELUM_MULAI";
+}
+
+export function getWaktuMulai(tanggal: Date, waktuMulai: string): Date {
+  return new Date(parseWaktu(tanggal, waktuMulai));
 }
 
 export function deriveStatus(

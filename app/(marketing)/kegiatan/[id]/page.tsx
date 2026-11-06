@@ -6,7 +6,7 @@ import { daftarKegiatan } from "@/lib/actions/kegiatan";
 import { Icon } from "@/components/Icon";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { formatTanggal, tipeMateriLabel } from "@/lib/utils";
-import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
+import { isPendaftaranOpen, syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export default async function KegiatanDetailPage({
   params,
@@ -41,7 +41,14 @@ export default async function KegiatanDetailPage({
     }
   }
 
-  const canAccessMateri = session?.role === "SISWA";
+  const bisaAksesMateri = session?.role === "SISWA" && sudahTerdaftar;
+  const materiLockedHint = !session
+    ? "Masuk dan daftar kegiatan untuk membuka materi."
+    : session.role !== "SISWA"
+      ? "Materi hanya dapat diakses siswa terdaftar."
+      : isPendaftaranOpen(kegiatan.status)
+        ? "Daftar kegiatan ini untuk membuka materi."
+        : "Pendaftaran ditutup, materi hanya untuk peserta terdaftar.";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
@@ -76,26 +83,45 @@ export default async function KegiatanDetailPage({
               {kegiatan.jumlahSiswaDaftar} siswa telah mendaftar pada kegiatan ini.
             </p>
 
-            {canAccessMateri && session && kegiatan.materi.length > 0 && (
+            {kegiatan.materi.length > 0 && (
               <>
                 <h2 className="mt-8 font-display text-lg font-bold text-slate-900">Materi Pembelajaran</h2>
+                {!bisaAksesMateri && (
+                  <p className="mt-2 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    <Icon name="lock" className="mt-0.5 text-lg" />
+                    <span>{materiLockedHint}</span>
+                  </p>
+                )}
                 <ul className="mt-3 space-y-2.5">
                   {kegiatan.materi.map((m) => (
                     <li key={m.id}>
-                      <a
-                        href={m.filePath}
-                        target={m.tipe === "LINK" ? "_blank" : "_self"}
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm transition-colors hover:border-brand-300 hover:bg-brand-50/50"
-                      >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
-                          <Icon name={m.tipe === "PDF" ? "picture_as_pdf" : m.tipe === "VIDEO" ? "play_circle" : "link"} className="text-xl" />
-                        </span>
-                        <span className="flex-1 font-medium text-slate-800">{m.judulMateri}</span>
-                        <span className="badge border-slate-200 bg-slate-50 text-slate-600">
-                          {tipeMateriLabel[m.tipe]}
-                        </span>
-                      </a>
+                      {bisaAksesMateri ? (
+                        <a
+                          href={m.filePath}
+                          target={m.tipe === "LINK" ? "_blank" : "_self"}
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm transition-colors hover:border-brand-300 hover:bg-brand-50/50"
+                        >
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
+                            <Icon name={m.tipe === "PDF" ? "picture_as_pdf" : m.tipe === "VIDEO" ? "play_circle" : "link"} className="text-xl" />
+                          </span>
+                          <span className="flex-1 font-medium text-slate-800">{m.judulMateri}</span>
+                          <span className="badge border-slate-200 bg-slate-50 text-slate-600">
+                            {tipeMateriLabel[m.tipe]}
+                          </span>
+                        </a>
+                      ) : (
+                        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-500">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-500">
+                            <Icon name={m.tipe === "PDF" ? "picture_as_pdf" : m.tipe === "VIDEO" ? "play_circle" : "link"} className="text-xl" />
+                          </span>
+                          <span className="flex-1 font-medium">{m.judulMateri}</span>
+                          <span className="badge border-slate-200 bg-white text-slate-500">
+                            {tipeMateriLabel[m.tipe]}
+                          </span>
+                          <Icon name="lock" className="text-lg text-slate-400" />
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -148,11 +174,7 @@ export default async function KegiatanDetailPage({
                       <Icon name="check_circle" className="text-lg" filled />
                       Anda sudah terdaftar di kegiatan ini.
                     </div>
-                  ) : kegiatan.status === "SELESAI" ? (
-                    <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                      Kegiatan sudah selesai, pendaftaran ditutup.
-                    </p>
-                  ) : (
+                  ) : isPendaftaranOpen(kegiatan.status) ? (
                     <form action={daftarKegiatan}>
                       <input type="hidden" name="kegiatanId" value={kegiatanId} />
                       <button type="submit" className="btn-primary w-full py-3">
@@ -160,6 +182,12 @@ export default async function KegiatanDetailPage({
                         Daftar Kegiatan Ini
                       </button>
                     </form>
+                  ) : (
+                    <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                      {kegiatan.status === "BERLANGSUNG"
+                        ? "Kegiatan sudah dimulai, pendaftaran ditutup."
+                        : "Kegiatan sudah selesai, pendaftaran ditutup."}
+                    </p>
                   )
                 ) : (
                   <Link href={`/dashboard/${session.role.toLowerCase()}`} className="btn-outline w-full">
@@ -167,7 +195,7 @@ export default async function KegiatanDetailPage({
                     Buka Dashboard
                   </Link>
                 )
-              ) : (
+              ) : isPendaftaranOpen(kegiatan.status) ? (
                 <div className="space-y-2.5 text-center">
                   <p className="text-sm text-slate-600">
                     Login sebagai siswa untuk mendaftar dan mengakses materi.
@@ -176,6 +204,12 @@ export default async function KegiatanDetailPage({
                     Masuk
                   </Link>
                 </div>
+              ) : (
+                <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm text-slate-600">
+                  {kegiatan.status === "BERLANGSUNG"
+                    ? "Kegiatan sudah dimulai, pendaftaran ditutup."
+                    : "Kegiatan sudah selesai, pendaftaran ditutup."}
+                </p>
               )}
             </div>
           </aside>

@@ -35,6 +35,11 @@ enum StatusKehadiran {
   TIDAK_HADIR
 }
 
+enum TipeNotifikasi {
+  KEGIATAN_BARU
+  AKAN_MULAI
+}
+
 model User {
   id        Int        @id @default(autoincrement())
   nama      String
@@ -45,6 +50,7 @@ model User {
   createdAt DateTime   @default(now())
   siswa     Siswa?
   guru      Guru?
+  notifikasi Notifikasi[]
 
   @@map("users")
 }
@@ -128,6 +134,7 @@ model Kegiatan {
   guru              Guru               @relation(fields: [guruId], references: [id], onDelete: Cascade)
   materi            Materi[]
   pendaftaran       Pendaftaran[]
+  notifikasi        Notifikasi[]
 
   @@index([status])
   @@map("kegiatan")
@@ -155,4 +162,22 @@ model Pendaftaran {
 
   @@unique([siswaId, kegiatanId])
   @@map("pendaftaran")
+}
+
+model Notifikasi {
+  id         Int            @id @default(autoincrement())
+  userId     Int
+  kegiatanId Int?
+  tipe       TipeNotifikasi
+  judul      String
+  pesan      String         @db.Text
+  href       String
+  dibaca     Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kegiatan   Kegiatan?      @relation(fields: [kegiatanId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tipe, kegiatanId])
+  @@index([userId, dibaca])
+  @@map("notifikasi")
 }
