@@ -8,6 +8,38 @@ import { syncKegiatanStatuses } from "@/lib/kegiatan-status";
 
 export const metadata = { title: "Jadwal Pembelajaran" };
 
+// Gaya bersama: border navy, bayangan keras, dan efek "ditekan" pada tombol
+const CARD = "rounded-2xl border-2 border-[#0F1B3D] bg-white shadow-[4px_4px_0_0_#0F1B3D]";
+const FOCUS =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E78E6] focus-visible:ring-offset-2";
+const PRESS =
+  "transition-all duration-150 hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-1 active:translate-y-1 active:shadow-none";
+const BTN_PRIMARY = `inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[#0F1B3D] bg-[#0F1B3D] px-5 py-3 text-sm font-bold text-white shadow-[4px_4px_0_0_#FFC83D] hover:shadow-[2px_2px_0_0_#FFC83D] ${PRESS} ${FOCUS}`;
+const BTN_OUTLINE = `inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[#0F1B3D] bg-white px-5 py-3 text-sm font-bold text-[#0F1B3D] shadow-[4px_4px_0_0_#0F1B3D] hover:bg-[#CFE7FF]/50 hover:shadow-[2px_2px_0_0_#0F1B3D] ${PRESS} ${FOCUS}`;
+
+const CSS = `
+.rec-dot { animation: rec 1.4s ease-in-out infinite; }
+@keyframes rec { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .rec-dot { animation: none !important; } }
+`;
+
+// Selisih hari kalender antara hari ini dan tanggal kegiatan
+function selisihHari(tanggal: Date) {
+  const a = new Date();
+  a.setHours(0, 0, 0, 0);
+  const b = new Date(tanggal);
+  b.setHours(0, 0, 0, 0);
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+}
+
+function labelHari(tanggal: Date) {
+  const n = selisihHari(tanggal);
+  if (n < 0) return null;
+  if (n === 0) return "Hari ini";
+  if (n === 1) return "Besok";
+  return `${n} hari lagi`;
+}
+
 export default async function SiswaJadwalPage() {
   const session = await requireRole("SISWA");
   const siswa = await db.siswa.findFirstOrThrow({ where: { userId: session.userId } });
@@ -41,181 +73,213 @@ export default async function SiswaJadwalPage() {
   const sesiBerlangsung = pendaftaran.filter((p) => p.kegiatan.status === "BERLANGSUNG");
   const sesiMendatang = pendaftaran.filter((p) => p.kegiatan.status === "BELUM_MULAI");
 
+  const stats = [
+    { label: "Sesi terdaftar", value: pendaftaran.length, icon: "event_upcoming", bg: "#CFE7FF", fg: "#1E5FD8" },
+    { label: "Sedang berlangsung", value: sesiBerlangsung.length, icon: "play_circle", bg: "#CDF3DD", fg: "#12823F" },
+    { label: "Sesi mendatang", value: sesiMendatang.length, icon: "schedule", bg: "#FFE08A", fg: "#8A5A00" },
+  ];
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-extrabold text-slate-900">
+    <div className="space-y-10">
+      <style>{CSS}</style>
+
+      <header>
+        <h1 className="font-display text-3xl font-extrabold text-[#0F1B3D] sm:text-4xl">
           Jadwal Pembelajaran
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-2 max-w-xl text-sm text-[#0F1B3D]/65 sm:text-base">
           Pantau waktu webinar dan kelas online yang Anda ikuti agar tidak terlewat.
         </p>
-      </div>
+      </header>
 
-      {/* Overview Stat Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="card flex items-center gap-4 p-4">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-700">
-            <Icon name="event_upcoming" className="text-2xl" />
-          </span>
-          <div>
-            <p className="font-display text-2xl font-extrabold text-slate-900">
-              {pendaftaran.length}
-            </p>
-            <p className="text-xs font-medium text-slate-500">Sesi Terdaftar</p>
-          </div>
-        </div>
+      {/* Ringkasan */}
+      <section aria-label="Ringkasan jadwal">
+        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {stats.map((s) => (
+            <div key={s.label} className={`${CARD} flex items-center gap-4 p-4`}>
+              <span
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border-2 border-[#0F1B3D]"
+                style={{ backgroundColor: s.bg, color: s.fg }}
+              >
+                <Icon name={s.icon} className="text-2xl" filled />
+              </span>
+              <div>
+                <dd className="font-display text-3xl font-extrabold leading-none tabular-nums text-[#0F1B3D]">
+                  {s.value}
+                </dd>
+                <dt className="mt-1 text-xs font-semibold text-[#0F1B3D]/65">{s.label}</dt>
+              </div>
+            </div>
+          ))}
+        </dl>
+      </section>
 
-        <div className="card flex items-center gap-4 p-4">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-            <Icon name="play_circle" className="text-2xl" />
-          </span>
-          <div>
-            <p className="font-display text-2xl font-extrabold text-slate-900">
-              {sesiBerlangsung.length}
-            </p>
-            <p className="text-xs font-medium text-slate-500">Sedang Berlangsung</p>
-          </div>
-        </div>
-
-        <div className="card flex items-center gap-4 p-4">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
-            <Icon name="schedule" className="text-2xl" />
-          </span>
-          <div>
-            <p className="font-display text-2xl font-extrabold text-slate-900">
-              {sesiMendatang.length}
-            </p>
-            <p className="text-xs font-medium text-slate-500">Sesi Mendatang</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Jadwal Terdaftar */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-slate-900">
-            Jadwal Sesi Anda
+      {/* Jadwal terdaftar */}
+      <section aria-labelledby="jadwal-anda" className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="jadwal-anda" className="font-display text-xl font-extrabold text-[#0F1B3D]">
+            Jadwal sesi Anda
           </h2>
           <Link
             href="/dashboard/siswa/kegiatan"
-            className="text-xs font-semibold text-brand-700 hover:underline"
+            className={`rounded-lg text-sm font-bold text-[#1E5FD8] underline-offset-4 hover:underline ${FOCUS}`}
           >
-            Lihat Semua Kegiatan →
+            Lihat semua kegiatan
           </Link>
         </div>
 
         {pendaftaran.length === 0 ? (
-          <div className="card flex flex-col items-center gap-3 p-10 text-center">
-            <Icon name="calendar_today" className="text-4xl text-slate-300" />
-            <p className="font-medium text-slate-600">Belum ada jadwal kegiatan terdaftar.</p>
-            <p className="max-w-sm text-xs text-slate-400">
+          <div className="flex flex-col items-center rounded-2xl border-2 border-dashed border-[#0F1B3D]/30 bg-white/70 px-6 py-12 text-center">
+            <span className="grid h-14 w-14 place-items-center rounded-xl border-2 border-[#0F1B3D] bg-white text-[#1E78E6] shadow-[3px_3px_0_0_#0F1B3D]">
+              <Icon name="calendar_today" className="text-3xl" filled />
+            </span>
+            <p className="mt-5 text-base font-bold text-[#0F1B3D]">
+              Belum ada jadwal kegiatan terdaftar
+            </p>
+            <p className="mt-1 max-w-sm text-sm text-[#0F1B3D]/65">
               Daftar kegiatan pembelajaran yang tersedia untuk mengisi jadwal belajar Anda.
             </p>
-            <Link href="/dashboard/siswa/kegiatan" className="btn-primary mt-2">
-              Jelajahi Katalog Kegiatan
+            <Link href="/dashboard/siswa/kegiatan" className={`${BTN_PRIMARY} mt-6`}>
+              <Icon name="event_available" className="text-lg" />
+              Jelajahi katalog kegiatan
             </Link>
           </div>
         ) : (
-          <div className="space-y-3.5">
+          <ul className="space-y-5">
             {pendaftaran.map((p) => {
               const k = p.kegiatan;
               const isBerlangsung = k.status === "BERLANGSUNG";
+              const hari = labelHari(k.tanggal);
               return (
-                <div
+                <li
                   key={p.id}
-                  className={`card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between ${
-                    isBerlangsung ? "border-emerald-300 ring-2 ring-emerald-500/20" : ""
+                  className={`flex flex-col overflow-hidden rounded-2xl border-2 border-[#0F1B3D] bg-white sm:flex-row ${
+                    isBerlangsung
+                      ? "shadow-[5px_5px_0_0_#16A34A]"
+                      : "shadow-[4px_4px_0_0_#0F1B3D]"
                   }`}
                 >
-                  <div className="flex min-w-0 flex-1 items-start gap-4">
-                    {/* Kotak Tanggal */}
-                    <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-                      <span className="text-[10px] font-bold uppercase tracking-wider">
-                        {k.tanggal.toLocaleDateString("id-ID", { month: "short" })}
-                      </span>
-                      <span className="font-display text-xl font-extrabold leading-none">
-                        {k.tanggal.getDate()}
-                      </span>
-                    </div>
+                  {/* Sobekan tiket: tanggal */}
+                  <div
+                    aria-hidden="true"
+                    className={`flex shrink-0 items-center justify-center gap-4 border-b-2 border-dashed border-[#0F1B3D]/40 px-5 py-4 sm:w-32 sm:flex-col sm:gap-0 sm:border-b-0 sm:border-r-2 sm:py-5 ${
+                      isBerlangsung ? "bg-[#CDF3DD]" : "bg-[#FFC83D]"
+                    }`}
+                  >
+                    <span className="text-sm font-bold text-[#0F1B3D]">
+                      {k.tanggal.toLocaleDateString("id-ID", { weekday: "short" })}
+                    </span>
+                    <span className="font-display text-4xl font-extrabold leading-none text-[#0F1B3D] sm:my-1 sm:text-5xl">
+                      {k.tanggal.getDate()}
+                    </span>
+                    <span className="text-sm font-bold text-[#0F1B3D]">
+                      {k.tanggal.toLocaleDateString("id-ID", { month: "short" })}
+                    </span>
+                  </div>
 
+                  <div className="flex min-w-0 flex-1 flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-brand-700">
+                        <span className="inline-flex rounded-full border-2 border-[#0F1B3D] bg-[#CFE7FF] px-2.5 py-0.5 text-xs font-bold text-[#0F1B3D]">
                           {k.mapel.namaMapel}
                         </span>
                         <StatusBadge status={k.status} />
+                        {isBerlangsung ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E5372E] px-2.5 py-1 text-[11px] font-bold text-white">
+                            <span className="rec-dot h-1.5 w-1.5 rounded-full bg-white" />
+                            LIVE
+                          </span>
+                        ) : (
+                          hari && (
+                            <span className="inline-flex rounded-full bg-[#0F1B3D] px-2.5 py-1 text-[11px] font-bold text-white">
+                              {hari}
+                            </span>
+                          )
+                        )}
                       </div>
-                      <h3 className="mt-1 line-clamp-1 font-display text-base font-bold text-slate-900">
+
+                      <h3 className="mt-2 line-clamp-2 font-display text-lg font-extrabold leading-snug text-[#0F1B3D]">
                         {k.judulPembelajaran}
                       </h3>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                        <span className="inline-flex items-center gap-1">
-                          <Icon name="schedule" className="text-sm text-slate-400" />
-                          {k.waktuMulai} - {k.waktuSelesai} WIB
+
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#0F1B3D]/65">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Icon name="schedule" className="text-base text-[#1E78E6]" filled />
+                          <span className="tabular-nums">
+                            {k.waktuMulai} - {k.waktuSelesai} WIB
+                          </span>
                         </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Icon name="person" className="text-sm text-slate-400" />
+                        <span className="inline-flex items-center gap-1.5">
+                          <Icon name="person" className="text-base text-[#1E78E6]" filled />
                           {k.guru.user.nama}
                         </span>
                       </div>
                     </div>
-                  </div>
 
-                  <Link
-                    href={`/dashboard/siswa/kegiatan/${k.id}`}
-                    className={`shrink-0 ${isBerlangsung ? "btn-primary" : "btn-outline"}`}
-                  >
-                    <Icon name={isBerlangsung ? "play_arrow" : "visibility"} className="text-lg" />
-                    {isBerlangsung ? "Masuk Sesi" : "Lihat Detail"}
-                  </Link>
-                </div>
+                    <Link
+                      href={`/dashboard/siswa/kegiatan/${k.id}`}
+                      className={`shrink-0 ${isBerlangsung ? BTN_PRIMARY : BTN_OUTLINE}`}
+                    >
+                      <Icon name={isBerlangsung ? "play_arrow" : "visibility"} className="text-lg" />
+                      {isBerlangsung ? "Masuk sesi" : "Lihat detail"}
+                    </Link>
+                  </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
-      </div>
+      </section>
 
-      {/* Sesi Lain yang Akan Datang di Sekolah */}
+      {/* Sesi lain yang akan datang di sekolah */}
       {semuaMendatang.length > 0 && (
-        <div className="space-y-4 pt-4">
-          <h2 className="font-display text-lg font-bold text-slate-900">
-            Jadwal Pembelajaran Lainnya di SMK Kosgoro
+        <section aria-labelledby="jadwal-lain" className="space-y-4">
+          <h2 id="jadwal-lain" className="font-display text-xl font-extrabold text-[#0F1B3D]">
+            Jadwal pembelajaran lainnya di SMK Kosgoro
           </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {semuaMendatang.slice(0, 4).map((k) => {
               const sudahDaftar = registeredKegiatanIds.has(k.id);
               return (
-                <div key={k.id} className="card flex flex-col justify-between p-5">
+                <li key={k.id} className={`${CARD} flex flex-col justify-between p-5`}>
                   <div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-brand-700">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="inline-flex rounded-full border-2 border-[#0F1B3D] bg-[#E6DCFF] px-2.5 py-0.5 text-xs font-bold text-[#0F1B3D]">
                         {k.mapel.namaMapel}
                       </span>
                       <StatusBadge status={k.status} />
                     </div>
-                    <h4 className="mt-2 line-clamp-2 font-display text-base font-bold text-slate-900">
+                    <h3 className="mt-3 line-clamp-2 font-display text-lg font-extrabold leading-snug text-[#0F1B3D]">
                       {k.judulPembelajaran}
-                    </h4>
-                    <p className="mt-2 text-xs text-slate-500">
-                      {formatTanggal(k.tanggal)} • {k.waktuMulai} WIB
+                    </h3>
+                    <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-[#0F1B3D]/65">
+                      <Icon name="event_available" className="text-base text-[#1E78E6]" filled />
+                      <span className="tabular-nums">
+                        {formatTanggal(k.tanggal)}, {k.waktuMulai} WIB
+                      </span>
                     </p>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                    <span className="text-xs text-slate-500">{k.guru.user.nama}</span>
+                  <div className="mt-5 flex items-center justify-between gap-3 border-t-2 border-dashed border-[#0F1B3D]/25 pt-4">
+                    <span className="min-w-0 truncate text-sm text-[#0F1B3D]/65">{k.guru.user.nama}</span>
+                    {sudahDaftar && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#CDF3DD] px-2.5 py-1 text-xs font-bold text-[#12823F]">
+                        <Icon name="check_circle" className="text-sm" filled />
+                        Terdaftar
+                      </span>
+                    )}
                     <Link
                       href={`/dashboard/siswa/kegiatan/${k.id}`}
-                      className="text-xs font-semibold text-brand-700 hover:underline"
+                      className={`shrink-0 rounded-lg text-sm font-bold text-[#1E5FD8] underline-offset-4 hover:underline ${FOCUS}`}
                     >
-                      {sudahDaftar ? "Buka Kegiatan →" : "Detail & Daftar →"}
+                      {sudahDaftar ? "Buka kegiatan" : "Detail & daftar"}
                     </Link>
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
     </div>
   );

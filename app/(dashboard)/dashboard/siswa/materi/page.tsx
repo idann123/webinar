@@ -6,6 +6,29 @@ import { formatTanggal } from "@/lib/utils";
 
 export const metadata = { title: "Materi Pembelajaran" };
 
+// Gaya bersama: border navy, bayangan keras, dan efek "ditekan" pada tombol
+const CARD = "rounded-2xl border-2 border-[#0F1B3D] bg-white shadow-[4px_4px_0_0_#0F1B3D]";
+const FOCUS =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E78E6] focus-visible:ring-offset-2";
+const PRESS =
+  "transition-all duration-150 hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-1 active:translate-y-1 active:shadow-none";
+const BTN_PRIMARY = `inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[#0F1B3D] bg-[#0F1B3D] px-5 py-3 text-sm font-bold text-white shadow-[4px_4px_0_0_#FFC83D] hover:shadow-[2px_2px_0_0_#FFC83D] ${PRESS} ${FOCUS}`;
+const BTN_PRIMARY_SM = `inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[#0F1B3D] bg-[#0F1B3D] px-4 py-2 text-sm font-bold text-white shadow-[3px_3px_0_0_#FFC83D] hover:shadow-[1px_1px_0_0_#FFC83D] ${PRESS} ${FOCUS}`;
+
+// Warna dan ikon tiap tipe materi
+function getTipeInfo(tipe: string) {
+  switch (tipe) {
+    case "PDF":
+      return { label: "Dokumen PDF", icon: "picture_as_pdf", bg: "#FFD6DE", fg: "#C0264A" };
+    case "VIDEO":
+      return { label: "Video rekaman", icon: "play_circle", bg: "#E6DCFF", fg: "#6D35D6" };
+    case "LINK":
+      return { label: "Tautan web", icon: "link", bg: "#CFE7FF", fg: "#1E5FD8" };
+    default:
+      return { label: tipe, icon: "description", bg: "#FFE08A", fg: "#8A5A00" };
+  }
+}
+
 export default async function SiswaMateriPage() {
   const session = await requireRole("SISWA");
   const siswa = await db.siswa.findFirstOrThrow({ where: { userId: session.userId } });
@@ -34,172 +57,145 @@ export default async function SiswaMateriPage() {
   const totalVideo = materials.filter((m) => m.tipe === "VIDEO").length;
   const totalLink = materials.filter((m) => m.tipe === "LINK").length;
 
-  const getTipeBadge = (tipe: string) => {
-    switch (tipe) {
-      case "PDF":
-        return {
-          label: "Dokumen PDF",
-          icon: "picture_as_pdf",
-          color: "bg-rose-50 text-rose-700 border-rose-200",
-          iconBg: "bg-rose-100 text-rose-700",
-        };
-      case "VIDEO":
-        return {
-          label: "Video Rekaman",
-          icon: "play_circle",
-          color: "bg-violet-50 text-violet-700 border-violet-200",
-          iconBg: "bg-violet-100 text-violet-700",
-        };
-      case "LINK":
-        return {
-          label: "Tautan Web",
-          icon: "link",
-          color: "bg-brand-50 text-brand-700 border-brand-200",
-          iconBg: "bg-brand-100 text-brand-700",
-        };
-      default:
-        return {
-          label: tipe,
-          icon: "description",
-          color: "bg-slate-50 text-slate-700 border-slate-200",
-          iconBg: "bg-slate-100 text-slate-700",
-        };
-    }
-  };
+  const stats = [
+    { label: "Total materi", value: materials.length, icon: "folder", bg: "#FFE08A", fg: "#8A5A00" },
+    { label: "Dokumen PDF", value: totalPdf, icon: "picture_as_pdf", bg: "#FFD6DE", fg: "#C0264A" },
+    { label: "Video rekaman", value: totalVideo, icon: "play_circle", bg: "#E6DCFF", fg: "#6D35D6" },
+    { label: "Tautan tambahan", value: totalLink, icon: "link", bg: "#CFE7FF", fg: "#1E5FD8" },
+  ];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-extrabold text-slate-900">
+    <div className="space-y-10">
+      <header>
+        <h1 className="font-display text-3xl font-extrabold text-[#0F1B3D] sm:text-4xl">
           Materi Pembelajaran
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-2 max-w-xl text-sm text-[#0F1B3D]/65 sm:text-base">
           Akses modul, bahan presentasi, file PDF, dan tautan referensi dari kegiatan belajar.
         </p>
-      </div>
+      </header>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="card p-4 text-center">
-          <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
-            <Icon name="folder" className="text-xl" />
-          </span>
-          <p className="mt-3 font-display text-2xl font-extrabold text-slate-900">
-            {materials.length}
-          </p>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">Total Materi</p>
-        </div>
+      {/* Ringkasan */}
+      <section aria-label="Ringkasan materi">
+        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className={`${CARD} flex flex-col items-start gap-3 p-4`}>
+              <span
+                className="grid h-11 w-11 place-items-center rounded-xl border-2 border-[#0F1B3D]"
+                style={{ backgroundColor: s.bg, color: s.fg }}
+              >
+                <Icon name={s.icon} className="text-2xl" filled />
+              </span>
+              <div>
+                <dd className="font-display text-3xl font-extrabold leading-none tabular-nums text-[#0F1B3D]">
+                  {s.value}
+                </dd>
+                <dt className="mt-1 text-xs font-semibold text-[#0F1B3D]/65">{s.label}</dt>
+              </div>
+            </div>
+          ))}
+        </dl>
+      </section>
 
-        <div className="card p-4 text-center">
-          <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-700">
-            <Icon name="picture_as_pdf" className="text-xl" />
-          </span>
-          <p className="mt-3 font-display text-2xl font-extrabold text-slate-900">{totalPdf}</p>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">Dokumen PDF</p>
-        </div>
-
-        <div className="card p-4 text-center">
-          <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
-            <Icon name="play_circle" className="text-xl" />
-          </span>
-          <p className="mt-3 font-display text-2xl font-extrabold text-slate-900">{totalVideo}</p>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">Video Rekaman</p>
-        </div>
-
-        <div className="card p-4 text-center">
-          <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
-            <Icon name="link" className="text-xl" />
-          </span>
-          <p className="mt-3 font-display text-2xl font-extrabold text-slate-900">{totalLink}</p>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">Tautan Tambahan</p>
-        </div>
-      </div>
-
-      {/* Daftar Materi */}
-      <div className="space-y-4">
-        <h2 className="font-display text-lg font-bold text-slate-900">
-          Semua Materi Tersedia
+      {/* Daftar materi */}
+      <section aria-labelledby="semua-materi" className="space-y-4">
+        <h2 id="semua-materi" className="font-display text-xl font-extrabold text-[#0F1B3D]">
+          Semua materi tersedia
         </h2>
 
         {materials.length === 0 ? (
-          <div className="card flex flex-col items-center gap-3 p-12 text-center">
-            <Icon name="folder_off" className="text-4xl text-slate-300" />
-            <p className="font-medium text-slate-600">Belum ada materi pembelajaran yang diunggah.</p>
-            <p className="max-w-md text-xs text-slate-400">
+          <div className="flex flex-col items-center rounded-2xl border-2 border-dashed border-[#0F1B3D]/30 bg-white/70 px-6 py-14 text-center">
+            <span className="grid h-14 w-14 place-items-center rounded-xl border-2 border-[#0F1B3D] bg-white text-[#1E78E6] shadow-[3px_3px_0_0_#0F1B3D]">
+              <Icon name="folder_off" className="text-3xl" filled />
+            </span>
+            <p className="mt-5 text-base font-bold text-[#0F1B3D]">
+              Belum ada materi pembelajaran yang diunggah
+            </p>
+            <p className="mt-1 max-w-md text-sm text-[#0F1B3D]/65">
               Bapak/Ibu guru akan menambahkan materi sebelum atau setelah sesi webinar berlangsung.
             </p>
-            <Link href="/dashboard/siswa/kegiatan" className="btn-primary mt-2">
-              Jelajahi Kegiatan
+            <Link href="/dashboard/siswa/kegiatan" className={`${BTN_PRIMARY} mt-6`}>
+              <Icon name="event_available" className="text-lg" />
+              Jelajahi kegiatan
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {materials.map((m) => {
-              const info = getTipeBadge(m.tipe);
+              const info = getTipeInfo(m.tipe);
               const isEnrolled = enrolledSet.has(m.kegiatanId);
+              const isLink = m.tipe === "LINK";
 
               return (
-                <div key={m.id} className="card flex flex-col justify-between p-5">
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`badge border ${info.color}`}>
-                        <Icon name={info.icon} className="text-xs" />
-                        {info.label}
+                <li key={m.id} className={`${CARD} flex flex-col overflow-hidden`}>
+                  {/* Tab warna sesuai tipe, seperti map file */}
+                  <div
+                    className="flex items-center justify-between gap-3 border-b-2 border-[#0F1B3D] px-4 py-3"
+                    style={{ backgroundColor: info.bg }}
+                  >
+                    <span className="flex items-center gap-2.5 text-sm font-bold text-[#0F1B3D]">
+                      <span
+                        aria-hidden
+                        className="grid h-9 w-9 place-items-center rounded-lg border-2 border-[#0F1B3D] bg-white"
+                        style={{ color: info.fg }}
+                      >
+                        <Icon name={info.icon} className="text-xl" filled />
                       </span>
-                      {isEnrolled && (
-                        <span className="badge border-emerald-200 bg-emerald-50 text-emerald-700">
-                          <Icon name="check" className="text-xs" />
-                          Terdaftar
+                      {info.label}
+                    </span>
+                    {isEnrolled && (
+                      <span className="inline-flex items-center gap-1 rounded-full border-2 border-[#0F1B3D] bg-white px-2.5 py-0.5 text-xs font-bold text-[#12823F]">
+                        <Icon name="check_circle" className="text-sm" filled />
+                        Terdaftar
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-1 flex-col justify-between p-5">
+                    <div>
+                      <h3 className="line-clamp-2 font-display text-lg font-extrabold leading-snug text-[#0F1B3D]">
+                        {m.judulMateri}
+                      </h3>
+                      <p className="mt-1.5 line-clamp-2 text-sm text-[#0F1B3D]/65">
+                        {m.kegiatan.mapel.namaMapel}, {m.kegiatan.judulPembelajaran}
+                      </p>
+                      <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#0F1B3D]/60">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Icon name="school" className="text-sm text-[#1E78E6]" filled />
+                          {m.kegiatan.guru.user.nama}
                         </span>
-                      )}
+                        <span className="inline-flex items-center gap-1.5">
+                          <Icon name="event_available" className="text-sm text-[#1E78E6]" filled />
+                          {formatTanggal(m.kegiatan.tanggal)}
+                        </span>
+                      </p>
                     </div>
 
-                    <div className="mt-3 flex items-start gap-3.5">
-                      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${info.iconBg}`}>
-                        <Icon name={info.icon} className="text-2xl" />
-                      </span>
-                      <div className="min-w-0">
-                        <h3 className="line-clamp-1 font-display text-base font-bold text-slate-900">
-                          {m.judulMateri}
-                        </h3>
-                        <p className="mt-0.5 truncate text-xs text-slate-500">
-                          {m.kegiatan.mapel.namaMapel} • {m.kegiatan.judulPembelajaran}
-                        </p>
-                      </div>
-                    </div>
+                    <div className="mt-5 flex items-center justify-between gap-3 border-t-2 border-dashed border-[#0F1B3D]/25 pt-4">
+                      <Link
+                        href={`/dashboard/siswa/kegiatan/${m.kegiatanId}`}
+                        className={`rounded-lg text-sm font-bold text-[#1E5FD8] underline-offset-4 hover:underline ${FOCUS}`}
+                      >
+                        Buka kegiatan
+                      </Link>
 
-                    <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                      <Icon name="school" className="text-sm" />
-                      <span>{m.kegiatan.guru.user.nama}</span>
-                      <span>•</span>
-                      <span>{formatTanggal(m.kegiatan.tanggal)}</span>
+                      <a
+                        href={m.filePath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={BTN_PRIMARY_SM}
+                      >
+                        <Icon name={isLink ? "open_in_new" : "download"} className="text-lg" />
+                        {isLink ? "Buka link" : "Akses / unduh"}
+                      </a>
                     </div>
                   </div>
-
-                  <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3.5">
-                    <Link
-                      href={`/dashboard/siswa/kegiatan/${m.kegiatanId}`}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-900"
-                    >
-                      Buka Kegiatan
-                    </Link>
-
-                    <a
-                      href={m.filePath}
-                      target={m.tipe === "LINK" ? "_blank" : "_blank"}
-                      rel="noopener noreferrer"
-                      className="btn-primary py-1.5 text-xs"
-                    >
-                      <Icon name={m.tipe === "LINK" ? "open_in_new" : "download"} className="text-sm" />
-                      {m.tipe === "LINK" ? "Buka Link" : "Akses / Unduh"}
-                    </a>
-                  </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
-      </div>
+      </section>
     </div>
   );
 }
