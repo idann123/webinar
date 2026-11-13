@@ -137,7 +137,7 @@ model Materi {
   id          Int       @id @default(autoincrement())
   kegiatanId  Int
   judulMateri String
-  filePath    String
+  filePath    String    @db.Text
   tipe        TipeMateri
   kegiatan    Kegiatan  @relation(fields: [kegiatanId], references: [id], onDelete: Cascade)
 

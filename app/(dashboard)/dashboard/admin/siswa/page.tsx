@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/session";
 import { deleteSiswa, resetUserPassword, toggleUserStatus } from "@/lib/actions/admin";
@@ -20,11 +21,18 @@ export default async function AdminSiswaPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-extrabold text-slate-900">Kelola Siswa</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {siswa.length} siswa terdaftar. Akun siswa dibuat sendiri lewat halaman registrasi.
-        </p>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <h1 className="font-display text-2xl font-extrabold text-slate-900">Kelola Siswa</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {siswa.length} siswa terdaftar. Tambah akun, ubah data/kelas, aktifkan/nonaktifkan, reset
+            password, atau hapus.
+          </p>
+        </div>
+        <Link href="/dashboard/admin/siswa/baru" className="btn-primary">
+          <Icon name="person_add" className="text-xl" />
+          Tambah Siswa
+        </Link>
       </div>
 
       {siswa.length === 0 ? (
@@ -66,6 +74,13 @@ export default async function AdminSiswaPage() {
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex justify-end gap-1">
+                      <Link
+                        href={`/dashboard/admin/siswa/${s.id}`}
+                        className="rounded-lg p-2 text-slate-400 hover:bg-brand-50 hover:text-brand-700"
+                        aria-label="Edit siswa"
+                      >
+                        <Icon name="edit" className="text-xl" />
+                      </Link>
                       <ConfirmForm
                         action={toggleUserStatus}
                         message={

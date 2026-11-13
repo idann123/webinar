@@ -7,7 +7,15 @@ import path from "path";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/session";
-import { guruSchema, guruUpdateSchema, jurusanSchema, kelasSchema, mapelSchema } from "@/lib/validators";
+import {
+  guruSchema,
+  guruUpdateSchema,
+  jurusanSchema,
+  kelasSchema,
+  mapelSchema,
+  siswaSchema,
+  siswaUpdateSchema,
+} from "@/lib/validators";
 
 export type MasterState = { error?: string; success?: string };
 
@@ -68,6 +76,34 @@ export async function deleteJurusan(formData: FormData) {
   revalidatePath("/dashboard/admin");
 }
 
+export async function updateJurusan(
+  jurusanId: number,
+  _p: MasterState,
+  formData: FormData
+): Promise<MasterState> {
+  await requireRole("ADMIN");
+  const jurusan = await db.jurusan.findUnique({ where: { id: jurusanId } });
+  if (!jurusan) return { error: "Data jurusan tidak ditemukan." };
+
+  const parsed = jurusanSchema.safeParse({ namaJurusan: formData.get("namaJurusan") });
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message };
+
+  const namaJurusan = parsed.data.namaJurusan.trim().toUpperCase();
+  const duplikat = await db.jurusan.findFirst({
+    where: { namaJurusan, NOT: { id: jurusanId } },
+  });
+  if (duplikat) return { error: "Nama jurusan sudah ada." };
+
+  await db.jurusan.update({
+    where: { id: jurusanId },
+    data: { namaJurusan },
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/admin/jurusan");
+  return { success: "Data jurusan berhasil diperbarui." };
+}
+
 export async function addKelas(_p: MasterState, formData: FormData): Promise<MasterState> {
   await requireRole("ADMIN");
   const parsed = kelasSchema.safeParse({
@@ -94,6 +130,41 @@ export async function deleteKelas(formData: FormData) {
   revalidatePath("/dashboard/admin");
 }
 
+export async function updateKelas(
+  kelasId: number,
+  _p: MasterState,
+  formData: FormData
+): Promise<MasterState> {
+  await requireRole("ADMIN");
+  const kelas = await db.kelas.findUnique({ where: { id: kelasId } });
+  if (!kelas) return { error: "Data kelas tidak ditemukan." };
+
+  const parsed = kelasSchema.safeParse({
+    namaKelas: formData.get("namaKelas"),
+    jurusanId: formData.get("jurusanId"),
+  });
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message };
+
+  const namaKelas = parsed.data.namaKelas.trim().toUpperCase();
+  const duplikat = await db.kelas.findFirst({
+    where: {
+      namaKelas,
+      jurusanId: parsed.data.jurusanId,
+      NOT: { id: kelasId },
+    },
+  });
+  if (duplikat) return { error: "Kelas duplikat untuk jurusan tersebut." };
+
+  await db.kelas.update({
+    where: { id: kelasId },
+    data: { namaKelas, jurusanId: parsed.data.jurusanId },
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/admin/kelas");
+  return { success: "Data kelas berhasil diperbarui." };
+}
+
 export async function addMapel(_p: MasterState, formData: FormData): Promise<MasterState> {
   await requireRole("ADMIN");
   const parsed = mapelSchema.safeParse({ namaMapel: formData.get("namaMapel") });
@@ -113,6 +184,34 @@ export async function deleteMapel(formData: FormData) {
   if (!id) return;
   await db.mapel.delete({ where: { id } });
   revalidatePath("/dashboard/admin");
+}
+
+export async function updateMapel(
+  mapelId: number,
+  _p: MasterState,
+  formData: FormData
+): Promise<MasterState> {
+  await requireRole("ADMIN");
+  const mapel = await db.mapel.findUnique({ where: { id: mapelId } });
+  if (!mapel) return { error: "Data mapel tidak ditemukan." };
+
+  const parsed = mapelSchema.safeParse({ namaMapel: formData.get("namaMapel") });
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message };
+
+  const namaMapel = parsed.data.namaMapel.trim();
+  const duplikat = await db.mapel.findFirst({
+    where: { namaMapel, NOT: { id: mapelId } },
+  });
+  if (duplikat) return { error: "Nama mapel sudah ada." };
+
+  await db.mapel.update({
+    where: { id: mapelId },
+    data: { namaMapel },
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/admin/mapel");
+  return { success: "Data mapel berhasil diperbarui." };
 }
 
 export async function createGuruByAdmin(_p: MasterState, formData: FormData): Promise<MasterState> {
@@ -235,6 +334,88 @@ export async function updateGuruByAdmin(
   revalidatePath("/dashboard/admin/guru");
   revalidatePath("/");
   return { success: "Data guru berhasil diperbarui." };
+}
+
+export async function createSiswaByAdmin(_p: MasterState, formData: FormData): Promise<MasterState> {
+  await requireRole("ADMIN");
+  const parsed = siswaSchema.safeParse({
+    nama: formData.get("nama"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+    kelasId: formData.get("kelasId"),
+  });
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message };
+
+  const email = parsed.data.email.trim().toLowerCase();
+  const existing = await db.user.findUnique({ where: { email } });
+  if (existing) return { error: "Email sudah terdaftar." };
+
+  const kelas = await db.kelas.findUnique({ where: { id: parsed.data.kelasId } });
+  if (!kelas) return { error: "Kelas tidak ditemukan." };
+
+  await db.user.create({
+    data: {
+      nama: parsed.data.nama.trim(),
+      email,
+      password: await bcrypt.hash(parsed.data.password, 10),
+      role: "SISWA",
+      siswa: { create: { kelasId: parsed.data.kelasId } },
+    },
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/admin/siswa");
+  return { success: "Akun siswa berhasil dibuat." };
+}
+
+export async function updateSiswaByAdmin(
+  siswaId: number,
+  _p: MasterState,
+  formData: FormData
+): Promise<MasterState> {
+  await requireRole("ADMIN");
+  const siswa = await db.siswa.findUnique({ where: { id: siswaId }, include: { user: true } });
+  if (!siswa) return { error: "Data siswa tidak ditemukan." };
+
+  const parsed = siswaUpdateSchema.safeParse({
+    nama: formData.get("nama"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+    kelasId: formData.get("kelasId"),
+  });
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message };
+
+  const email = parsed.data.email.trim().toLowerCase();
+  const existingEmail = await db.user.findFirst({
+    where: { email, NOT: { id: siswa.userId } },
+  });
+  if (existingEmail) return { error: "Email sudah terdaftar." };
+
+  const kelas = await db.kelas.findUnique({ where: { id: parsed.data.kelasId } });
+  if (!kelas) return { error: "Kelas tidak ditemukan." };
+
+  const passwordHash = parsed.data.password
+    ? await bcrypt.hash(parsed.data.password, 10)
+    : undefined;
+
+  await db.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: siswa.userId },
+      data: {
+        nama: parsed.data.nama.trim(),
+        email,
+        ...(passwordHash ? { password: passwordHash } : {}),
+      },
+    });
+    await tx.siswa.update({
+      where: { id: siswaId },
+      data: { kelasId: parsed.data.kelasId },
+    });
+  });
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/admin/siswa");
+  return { success: "Data siswa berhasil diperbarui." };
 }
 
 export async function toggleUserStatus(formData: FormData) {

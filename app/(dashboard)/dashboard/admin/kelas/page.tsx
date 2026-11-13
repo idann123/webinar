@@ -58,16 +58,25 @@ export default async function AdminKelasPage() {
                   <td className="px-4 py-3 font-semibold text-slate-800">{k.namaKelas}</td>
                   <td className="px-4 py-3 text-slate-600">{k.jurusan.namaJurusan}</td>
                   <td className="px-4 py-3 text-slate-600">{k._count.siswa} siswa</td>
-                  <td className="px-4 py-3 text-right">
-                    <ConfirmForm
-                      action={deleteKelas}
-                      message={`Hapus kelas "${k.namaKelas}"? Data siswa di kelas ini juga terhapus.`}
-                    >
-                      <input type="hidden" name="id" value={k.id} />
-                      <button type="submit" className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Hapus kelas">
-                        <Icon name="delete" className="text-xl" />
-                      </button>
-                    </ConfirmForm>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-1">
+                      <Link
+                        href={`/dashboard/admin/kelas/${k.id}`}
+                        className="rounded-lg p-2 text-slate-400 hover:bg-brand-50 hover:text-brand-700"
+                        aria-label="Edit kelas"
+                      >
+                        <Icon name="edit" className="text-xl" />
+                      </Link>
+                      <ConfirmForm
+                        action={deleteKelas}
+                        message={`Hapus kelas "${k.namaKelas}"? Data siswa di kelas ini juga terhapus.`}
+                      >
+                        <input type="hidden" name="id" value={k.id} />
+                        <button type="submit" className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Hapus kelas">
+                          <Icon name="delete" className="text-xl" />
+                        </button>
+                      </ConfirmForm>
+                    </div>
                   </td>
                 </tr>
               ))}

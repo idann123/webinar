@@ -47,16 +47,25 @@ export default async function AdminMapelPage() {
                   <td className="px-4 py-3 font-semibold text-slate-800">{m.namaMapel}</td>
                   <td className="px-4 py-3 text-slate-600">{m._count.mapelGuru} guru</td>
                   <td className="px-4 py-3 text-slate-600">{m._count.kegiatan} kegiatan</td>
-                  <td className="px-4 py-3 text-right">
-                    <ConfirmForm
-                      action={deleteMapel}
-                      message={`Hapus mapel "${m.namaMapel}"? Penugasan guru ikut terhapus.`}
-                    >
-                      <input type="hidden" name="id" value={m.id} />
-                      <button type="submit" className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Hapus mapel">
-                        <Icon name="delete" className="text-xl" />
-                      </button>
-                    </ConfirmForm>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-1">
+                      <Link
+                        href={`/dashboard/admin/mapel/${m.id}`}
+                        className="rounded-lg p-2 text-slate-400 hover:bg-brand-50 hover:text-brand-700"
+                        aria-label="Edit mapel"
+                      >
+                        <Icon name="edit" className="text-xl" />
+                      </Link>
+                      <ConfirmForm
+                        action={deleteMapel}
+                        message={`Hapus mapel "${m.namaMapel}"? Penugasan guru ikut terhapus.`}
+                      >
+                        <input type="hidden" name="id" value={m.id} />
+                        <button type="submit" className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Hapus mapel">
+                          <Icon name="delete" className="text-xl" />
+                        </button>
+                      </ConfirmForm>
+                    </div>
                   </td>
                 </tr>
               ))}

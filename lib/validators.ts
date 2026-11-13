@@ -43,6 +43,24 @@ export const guruSchema = z.object({
   mapelIds: z.array(z.coerce.number().int().positive()).min(1, "Pilih minimal satu mapel"),
 });
 
+export const siswaSchema = z.object({
+  nama: z.string().min(3, "Nama minimal 3 karakter"),
+  email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
+  password: z.string().min(6, "Password minimal 6 karakter"),
+  kelasId: z.coerce.number().int().positive("Pilih kelas"),
+});
+
+export const siswaUpdateSchema = z.object({
+  nama: z.string().min(3, "Nama minimal 3 karakter"),
+  email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
+  password: z
+    .string()
+    .min(6, "Password minimal 6 karakter")
+    .optional()
+    .or(z.literal("")),
+  kelasId: z.coerce.number().int().positive("Pilih kelas"),
+});
+
 export const guruUpdateSchema = z.object({
   nama: z.string().min(3, "Nama minimal 3 karakter"),
   email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
